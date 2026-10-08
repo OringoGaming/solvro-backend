@@ -1,0 +1,10 @@
+services:
+  postgres:
+    image: 'postgres:latest' # postgres ma własny healthcheck
+    ports:
+      - "5432:5432" #TODO: env variables
+    environment:
+      - 'POSTGRES_DB=backend' #TODO: env variables
+      - 'POSTGRES_PASSWORD=postgres'
+      - 'POSTGRES_USER=postgres'
+    
