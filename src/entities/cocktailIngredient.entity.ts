@@ -18,7 +18,7 @@ export class CocktailIngredient {
     orphanedRowAction: 'delete',
     onDelete: 'CASCADE',
   })
-  cocktail: Cocktail;
+  cocktail?: Cocktail;
 
   @JoinColumn({ name: 'ingredientId' })
   @ManyToOne(
@@ -28,7 +28,7 @@ export class CocktailIngredient {
       onDelete: 'RESTRICT',
     },
   )
-  ingredient: Ingredient;
+  ingredient?: Ingredient;
 
   @Column({
     type: 'enum',

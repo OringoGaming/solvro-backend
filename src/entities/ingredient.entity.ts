@@ -19,5 +19,5 @@ export class Ingredient {
     'CocktailIngredient',
     (cocktailIngredient: CocktailIngredient) => cocktailIngredient.ingredient,
   )
-  cocktailIngredients: CocktailIngredient[];
+  cocktailIngredients?: CocktailIngredient[];
 }
