@@ -23,7 +23,7 @@ export class IngredientsService {
 
   async remove(id: string): Promise<boolean> {
     const res = await this.entityManager.delete(Ingredient, { id });
-    return res.affected ? true : false //TODO: test if driver supports affected
+    return res.affected ? true : false; //TODO: test if driver supports affected
   }
 
   create(ingredient: Partial<Ingredient>): Promise<Ingredient> {
