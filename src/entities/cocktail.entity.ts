@@ -1,31 +1,39 @@
-import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
-import type { CocktailCategory } from "./cocktailCategory.entity.js";
-import type { CocktailIngredient } from "./cocktailIngredient.entity.js";
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import type { CocktailCategory } from './cocktailCategory.entity.js';
+import type { CocktailIngredient } from './cocktailIngredient.entity.js';
 
 @Entity()
 export class Cocktail {
-    @PrimaryGeneratedColumn("uuid")
-    id: string;
-    @Column({type: "text"})
-    name: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+  @Column({ type: 'text', unique: true })
+  name: string;
 
-    @Column({type: "text"})
-    instruction: string;
-    @ManyToOne(
-        "CocktailCategory",
-        (category: CocktailCategory) => category.cocktails,
-        {
-            onDelete: "RESTRICT"
-        }
-    )
-    category: CocktailCategory
+  @Column({ type: 'text' })
+  instruction: string;
+  @ManyToOne(
+    'CocktailCategory',
+    (category: CocktailCategory) => category.cocktails,
+    {
+      onDelete: 'RESTRICT',
+      nullable: false
+    },
+  )
+  category: CocktailCategory;
 
-    @OneToMany(
-        "CocktailIngredient",
-        (ingredient: CocktailIngredient) => ingredient.cocktail, 
-        {
-            cascade: true
-        }
-    )
-    cocktailIngredients: CocktailIngredient[];
+  @OneToMany(
+    'CocktailIngredient',
+    (ingredient: CocktailIngredient) => ingredient.cocktail,
+    {
+      cascade: true,
+    },
+  )
+  cocktailIngredients: CocktailIngredient[];
 }
