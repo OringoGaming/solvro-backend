@@ -30,6 +30,7 @@ import {
   paginationSchema,
   type PaginationDto,
 } from '../shared/pagination.dto.js';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 //TODO: image upload.
 @Controller('ingredients')
@@ -37,6 +38,12 @@ export class IngredientsController {
   constructor(private readonly ingredientsService: IngredientsService) {}
 
   @Get()
+  @ApiOperation({ summary: "Returns an page of ingredients" })
+  @ApiResponse({
+    description: 'The amount of pages and the ingredients in the page',
+    status: HttpStatus.OK,
+    standardSchema: ingredientsPageSchema,
+  })
   @SerializeOptions({ schema: ingredientsPageSchema })
   async page(
     @Query({ schema: paginationSchema }) { pageSize, page }: PaginationDto,
@@ -53,17 +60,33 @@ export class IngredientsController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: "Returns an ingredient" })
+  @ApiResponse({
+    description: 'The ingredient',
+    status: HttpStatus.OK,
+    standardSchema: ingredientResponseSchema,
+  })
+  @ApiResponse({
+    description: 'No ingredient with the id',
+    status: HttpStatus.NOT_FOUND,
+  })
   @SerializeOptions({ schema: ingredientResponseSchema })
   async get(
     @Param('id', { schema: z.uuid() }) id: string,
   ): Promise<IngredientResponseDto> {
     const resp = await this.ingredientsService.find(id);
-    if (resp == null) throw new NotFoundException('Ingredient not found.');
+    if (resp === null) throw new NotFoundException('Ingredient not found.');
     return resp;
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: "Creates an ingredient" })
+  @ApiResponse({
+    description: 'The created ingredient',
+    status: HttpStatus.CREATED,
+    standardSchema: ingredientResponseSchema,
+  })
   @SerializeOptions({ schema: ingredientResponseSchema })
   create(
     @Body({ schema: createIngredientSchema })
@@ -74,17 +97,36 @@ export class IngredientsController {
 
   @Patch(':id')
   @SerializeOptions({ schema: ingredientResponseSchema })
+  @ApiOperation({ summary: "Updates an ingredient" })
+  @ApiResponse({
+    description: 'The updated ingredient',
+    status: HttpStatus.OK,
+    standardSchema: ingredientResponseSchema,
+  })
+  @ApiResponse({
+    description: 'No ingredient with the id',
+    status: HttpStatus.NOT_FOUND,
+  })
   async update(
     @Param('id', { schema: z.uuid() }) id: string,
     @Body({ schema: updateIngredientSchema })
     body: UpdateIngredientDto,
   ): Promise<IngredientResponseDto> {
     const res = await this.ingredientsService.update(id, body);
-    if (res == null) throw new NotFoundException('Ingredient not found.');
+    if (res === null) throw new NotFoundException('Ingredient not found.');
     return res;
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: "Deletes an ingredient" })
+  @ApiResponse({
+    description: 'The ingredient has been deleted',
+    status: HttpStatus.OK,
+  })
+  @ApiResponse({
+    description: 'No ingredient with the id',
+    status: HttpStatus.NOT_FOUND,
+  })
   async delete(@Param('id', { schema: z.uuid() }) id: string) {
     if (!(await this.ingredientsService.remove(id)))
       throw new NotFoundException('Ingredient not found.');
