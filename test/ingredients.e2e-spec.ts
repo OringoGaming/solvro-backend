@@ -54,6 +54,8 @@ describe('IngredientsController (e2e)', () => {
       { case: 'string pageSize', page: 0, pageSize: 'a' },
       { case: 'zero pageSize', page: 0, pageSize: 0 },
       { case: '101 pageSize', page: 0, pageSize: 101 },
+      { case: 'float pageSize', page: 0, pageSize: 1.123 },
+      { case: 'float page', page: 1.123 },
     ])('Should reject $case', async ({ page, pageSize }) => {
       const params = new URLSearchParams();
       if (page !== undefined) params.set('page', page.toString());
@@ -92,7 +94,10 @@ describe('IngredientsController (e2e)', () => {
       await request(app.getHttpServer())
         .get('/ingredients?page=0')
         .expect(200)
-        .expect({ pageCount: 1, ingredients: [ingredient] });
+        .expect({
+          pageCount: 1,
+          ingredients: [ingredient],
+        });
       expect(ingredientsSerivce.findPaginated).toHaveBeenCalledTimes(2);
     });
 
@@ -126,14 +131,26 @@ describe('IngredientsController (e2e)', () => {
 
     it.each([
       { case: 'empty body', body: {} },
-      { case: 'missing name', body: { ...baseBody, name: undefined } },
-      { case: 'empty name', body: { ...baseBody, name: '' } },
-      { case: 'non-string name', body: { ...baseBody, name: 1 } },
+      {
+        case: 'missing name',
+        body: { ...baseBody, name: undefined },
+      },
+      {
+        case: 'empty name',
+        body: { ...baseBody, name: '' },
+      },
+      {
+        case: 'non-string name',
+        body: { ...baseBody, name: 1 },
+      },
       {
         case: 'missing description',
         body: { ...baseBody, description: undefined },
       },
-      { case: 'empty description', body: { ...baseBody, description: '' } },
+      {
+        case: 'empty description',
+        body: { ...baseBody, description: '' },
+      },
       {
         case: 'missing alcoholic',
         body: { ...baseBody, alcoholic: undefined },
@@ -142,10 +159,16 @@ describe('IngredientsController (e2e)', () => {
         case: 'non-boolean alcoholic',
         body: { ...baseBody, alcoholic: 'true' },
       },
-      { case: 'id', body: { ...baseBody, id: randomUUID() } },
+      {
+        case: 'id',
+        body: { ...baseBody, id: randomUUID() },
+      },
       {
         case: 'imagePath',
-        body: { ...baseBody, imagePath: 'http://localhost:3000' },
+        body: {
+          ...baseBody,
+          imagePath: 'http://localhost:3000',
+        },
       },
     ])('Should reject $case', async ({ body }) => {
       await request(app.getHttpServer())
@@ -156,7 +179,9 @@ describe('IngredientsController (e2e)', () => {
     });
 
     it('Should validate and strip response', async () => {
-      ingredientsSerivce.create.mockResolvedValue({ junk: 1 });
+      ingredientsSerivce.create.mockResolvedValue({
+        junk: 1,
+      });
       await request(app.getHttpServer())
         .post('/ingredients')
         .send(baseBody)
@@ -164,9 +189,16 @@ describe('IngredientsController (e2e)', () => {
 
       expect(ingredientsSerivce.create).toHaveBeenCalled();
 
-      const ingredient = { id: randomUUID(), ...baseBody, imagePath: null };
+      const ingredient = {
+        id: randomUUID(),
+        ...baseBody,
+        imagePath: null,
+      };
       //Verify that junk is stripped away.
-      ingredientsSerivce.create.mockResolvedValue({ ...ingredient, junk: 1 });
+      ingredientsSerivce.create.mockResolvedValue({
+        ...ingredient,
+        junk: 1,
+      });
       await request(app.getHttpServer())
         .post('/ingredients')
         .send(baseBody)
@@ -203,14 +235,19 @@ describe('IngredientsController (e2e)', () => {
         imagePath: null,
       };
 
-      ingredientsSerivce.find.mockResolvedValue({ junk: 1 });
+      ingredientsSerivce.find.mockResolvedValue({
+        junk: 1,
+      });
       await request(app.getHttpServer())
         .get(`/ingredients/${ingredient.id}`)
         .expect(500);
       expect(ingredientsSerivce.find).toHaveBeenCalledOnce();
       expect(ingredientsSerivce.find).toHaveBeenLastCalledWith(ingredient.id);
 
-      ingredientsSerivce.find.mockResolvedValue({ ...ingredient, junk: 1 });
+      ingredientsSerivce.find.mockResolvedValue({
+        ...ingredient,
+        junk: 1,
+      });
       await request(app.getHttpServer())
         .get(`/ingredients/${ingredient.id}`)
         .expect(200)
@@ -257,11 +294,23 @@ describe('IngredientsController (e2e)', () => {
     it.each([
       { case: 'empty name', body: { name: '' } },
       { case: 'non-string name', body: { name: 1 } },
-      { case: 'empty description', body: { description: '' } },
-      { case: 'non-string description', body: { description: 1 } },
-      { case: 'non-boolean alcoholic', body: { alcoholic: 'true' } },
+      {
+        case: 'empty description',
+        body: { description: '' },
+      },
+      {
+        case: 'non-string description',
+        body: { description: 1 },
+      },
+      {
+        case: 'non-boolean alcoholic',
+        body: { alcoholic: 'true' },
+      },
       { case: 'id', body: { id: randomUUID() } },
-      { case: 'imagePath', body: { imagePath: 'http://localhost:3000' } },
+      {
+        case: 'imagePath',
+        body: { imagePath: 'http://localhost:3000' },
+      },
     ])('Should reject $case', async ({ body }) => {
       await request(app.getHttpServer())
         .patch(`/ingredients/${randomUUID()}`)
@@ -285,7 +334,9 @@ describe('IngredientsController (e2e)', () => {
     });
 
     it('Should validate and strip response', async () => {
-      ingredientsSerivce.update.mockResolvedValue({ junk: 1 });
+      ingredientsSerivce.update.mockResolvedValue({
+        junk: 1,
+      });
       await request(app.getHttpServer())
         .patch(`/ingredients/${ingredient.id}`)
         .send(baseBody)
@@ -296,7 +347,10 @@ describe('IngredientsController (e2e)', () => {
         baseBody,
       );
 
-      ingredientsSerivce.update.mockResolvedValue({ ...ingredient, junk: 1 });
+      ingredientsSerivce.update.mockResolvedValue({
+        ...ingredient,
+        junk: 1,
+      });
       await request(app.getHttpServer())
         .patch(`/ingredients/${ingredient.id}`)
         .send(baseBody)
