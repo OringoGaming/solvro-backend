@@ -1,4 +1,8 @@
-import { Module, StandardSchemaSerializerInterceptor, StandardSchemaValidationPipe } from '@nestjs/common';
+import {
+  Module,
+  StandardSchemaSerializerInterceptor,
+  StandardSchemaValidationPipe,
+} from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CocktailsModule } from './cocktails/cocktails.module.js';
 import { Cocktail } from './entities/cocktail.entity.js';
@@ -15,7 +19,7 @@ const password = process.env.DB_PASSWORD || 'postgres';
 const database = process.env.DB_DATABASE || 'backend';
 
 @Module({
-  providers: [ 
+  providers: [
     {
       provide: APP_PIPE,
       useClass: StandardSchemaValidationPipe,

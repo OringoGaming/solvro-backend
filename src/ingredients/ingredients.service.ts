@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { Ingredient } from '../entities/ingredient.entity.js';
+import { InjectEntityManager } from '@nestjs/typeorm';
 
 @Injectable()
 export class IngredientsService {
-  constructor(private readonly entityManager: EntityManager) {}
+  constructor(
+    @InjectEntityManager()
+    private readonly entityManager: EntityManager,
+  ) {}
 
   async findPaginated(
     take: number,
@@ -33,7 +37,7 @@ export class IngredientsService {
 
   async update(
     id: string,
-    ingredient: Partial<Ingredient>,
+    ingredient: Omit<Partial<Ingredient>, 'id'>,
   ): Promise<Ingredient | null> {
     const res = await this.entityManager.update(
       Ingredient,
@@ -43,6 +47,6 @@ export class IngredientsService {
     );
     if (!res.affected) return null;
     // mniej round tripów do bazy
-    return res.raw[0]; //TODO: validation?
+    return res.raw[0];
   }
 }
