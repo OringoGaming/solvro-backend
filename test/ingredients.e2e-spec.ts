@@ -67,7 +67,7 @@ describe('IngredientsController (e2e)', () => {
       expect(ingredientsSerivce.findPaginated).not.toHaveBeenCalled();
     });
 
-    it('Should validate and strip reponse', async () => {
+    it('Should validate and strip response', async () => {
       ingredientsSerivce.findPaginated.mockResolvedValue({
         total: 1,
         ingredients: [
@@ -107,8 +107,9 @@ describe('IngredientsController (e2e)', () => {
         ingredients: [],
       });
       await request(app.getHttpServer())
-        .get('/ingredients?page=0&pageSize=10')
+        .get('/ingredients?page=1&pageSize=10')
         .expect({ pageCount: 1, ingredients: [] });
+      expect(ingredientsSerivce.findPaginated).toHaveBeenLastCalledWith(10, 10);
 
       ingredientsSerivce.findPaginated.mockResolvedValue({
         total: 29,
@@ -116,9 +117,10 @@ describe('IngredientsController (e2e)', () => {
       });
 
       await request(app.getHttpServer())
-        .get('/ingredients?page=0&pageSize=10')
+        .get('/ingredients?page=30&pageSize=9')
         .expect(200)
-        .expect({ pageCount: 3, ingredients: [] });
+        .expect({ pageCount: 4, ingredients: [] });
+      expect(ingredientsSerivce.findPaginated).toHaveBeenLastCalledWith(9, 270);
     });
   });
 
@@ -218,7 +220,7 @@ describe('IngredientsController (e2e)', () => {
 
     it('Should check if the ingredient exists.', async () => {
       const uuid = randomUUID();
-      ingredientsSerivce.remove.mockResolvedValue(null);
+      ingredientsSerivce.find.mockResolvedValue(null);
       await request(app.getHttpServer())
         .get(`/ingredients/${uuid}`)
         .expect(404);
