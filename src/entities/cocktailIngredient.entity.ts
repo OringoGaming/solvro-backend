@@ -4,6 +4,9 @@ import type { Ingredient } from './ingredient.entity.js';
 
 export enum IngredientUnit {
   ML = 'millilitre',
+  PIECE = 'piece',
+  DASHES = 'dashes',
+  OTHER = 'other'
 }
 
 @Entity()
@@ -18,7 +21,7 @@ export class CocktailIngredient {
     orphanedRowAction: 'delete',
     onDelete: 'CASCADE',
   })
-  cocktail?: Cocktail;
+  cocktail: Cocktail;
 
   @JoinColumn({ name: 'ingredientId' })
   @ManyToOne(
@@ -28,7 +31,7 @@ export class CocktailIngredient {
       onDelete: 'RESTRICT',
     },
   )
-  ingredient?: Ingredient;
+  ingredient: Ingredient;
 
   @Column({
     type: 'enum',
@@ -40,5 +43,5 @@ export class CocktailIngredient {
     type: 'decimal',
     precision: 2,
   })
-  amount: number;
+  amount: string; // typeorm maps decimal to string.
 }

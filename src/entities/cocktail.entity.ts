@@ -1,6 +1,7 @@
 import {
   Column,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -25,7 +26,11 @@ export class Cocktail {
       nullable: false,
     },
   )
-  category?: CocktailCategory;
+  @JoinColumn({ name: 'categoryId' })
+  category: CocktailCategory;
+
+  @Column()
+  categoryId: number;
 
   @OneToMany(
     'CocktailIngredient',
@@ -34,5 +39,5 @@ export class Cocktail {
       cascade: true,
     },
   )
-  cocktailIngredients?: CocktailIngredient[];
+  cocktailIngredients: CocktailIngredient[];
 }

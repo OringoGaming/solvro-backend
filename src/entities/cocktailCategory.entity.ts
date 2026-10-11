@@ -9,5 +9,5 @@ export class CocktailCategory {
   name: string;
 
   @OneToMany('Cocktail', (cocktail: Cocktail) => cocktail.category)
-  cocktails?: Cocktail[];
+  cocktails: Cocktail[];
 }

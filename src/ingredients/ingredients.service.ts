@@ -37,7 +37,7 @@ export class IngredientsService {
 
   async update(
     id: string,
-    ingredient: Omit<Partial<Ingredient>, 'id'>,
+    ingredient: Partial<Ingredient>,
   ): Promise<Ingredient | null> {
     const res = await this.entityManager.update(
       Ingredient,
