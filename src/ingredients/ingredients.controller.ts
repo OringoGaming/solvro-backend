@@ -26,6 +26,10 @@ import {
 } from './dto/ingredientsPage.dto.js';
 import { updateIngredientSchema } from './dto/updateIngredient.dto.js';
 import type { UpdateIngredientDto } from './dto/updateIngredient.dto.js';
+import {
+  paginationSchema,
+  type PaginationDto,
+} from '../shared/pagination.dto.js';
 
 //TODO: image upload.
 @Controller('ingredients')
@@ -35,19 +39,17 @@ export class IngredientsController {
   @Get()
   @SerializeOptions({ schema: ingredientsPageSchema })
   async page(
-    @Query('page', { schema: z.coerce.number().int().nonnegative() })
-    page: number,
-    @Query('pageSize', {
-      schema: z.coerce.number().int().gte(1).lte(100).default(100),
-    })
-    pageSize: number,
+    @Query({ schema: paginationSchema }) { pageSize, page }: PaginationDto,
   ): Promise<IngredientsPageDto> {
     const { ingredients, total } = await this.ingredientsService.findPaginated(
       pageSize,
       page * pageSize,
     );
 
-    return { pageCount: Math.max(1, Math.ceil(total / pageSize)), ingredients };
+    return {
+      pageCount: Math.max(1, Math.ceil(total / pageSize)),
+      ingredients,
+    };
   }
 
   @Get(':id')
@@ -64,7 +66,8 @@ export class IngredientsController {
   @HttpCode(HttpStatus.CREATED)
   @SerializeOptions({ schema: ingredientResponseSchema })
   create(
-    @Body({ schema: createIngredientSchema }) body: CreateIngredientDto,
+    @Body({ schema: createIngredientSchema })
+    body: CreateIngredientDto,
   ): Promise<IngredientResponseDto> {
     return this.ingredientsService.create(body);
   }
@@ -73,7 +76,8 @@ export class IngredientsController {
   @SerializeOptions({ schema: ingredientResponseSchema })
   async update(
     @Param('id', { schema: z.uuid() }) id: string,
-    @Body({ schema: updateIngredientSchema }) body: UpdateIngredientDto,
+    @Body({ schema: updateIngredientSchema })
+    body: UpdateIngredientDto,
   ): Promise<IngredientResponseDto> {
     const res = await this.ingredientsService.update(id, body);
     if (res == null) throw new NotFoundException('Ingredient not found.');
