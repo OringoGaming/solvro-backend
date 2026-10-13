@@ -1,0 +1,35 @@
+import { Injectable } from '@nestjs/common';
+import { User } from '../entities/user.entity.js';
+import { EntityManager } from 'typeorm';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { PasswordHasher } from '@nestjs/authentication';
+
+@Injectable()
+export class UsersService {
+  constructor(
+    @InjectEntityManager()
+    private readonly entityManager: EntityManager,
+    private readonly passwordHasher: PasswordHasher,
+  ) {}
+
+  async create(
+    user: Omit<Partial<User>, 'id' | 'passwordHash'>,
+    password: string,
+  ): Promise<User> {
+    const passwordHash = await this.passwordHasher.hash(password);
+    const u = this.entityManager.create(User, { ...user, passwordHash });
+    return this.entityManager.save(User, u);
+  }
+
+  async findForLogin(email: string, password: string): Promise<User | null> {
+    const user = await this.entityManager.findOneBy(User, { email });
+    //pass null to prevent timing attacks
+    return (await this.passwordHasher.verify(password, user?.passwordHash))
+      ? user
+      : null;
+  }
+
+  findById(id: string): Promise<User | null> {
+    return this.entityManager.findOneBy(User, { id });
+  }
+}
