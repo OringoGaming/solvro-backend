@@ -30,15 +30,20 @@ import {
   paginationSchema,
   type PaginationDto,
 } from '../shared/pagination.dto.js';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import { ConstraintSchema } from '../shared/dbConstraints.js';
+import { IngredientsPolicy } from './ingredients.policy.js';
+import { Can } from '@nestjs/authorization';
+import { Public } from '@nestjs/authentication';
 
-//TODO: image upload.
+@ApiTags('ingredients')
 @Controller('ingredients')
 export class IngredientsController {
   constructor(private readonly ingredientsService: IngredientsService) {}
 
   @Get()
-  @ApiOperation({ summary: "Returns an page of ingredients" })
+  @Public()
+  @ApiOperation({ summary: 'Returns an page of ingredients' })
   @ApiResponse({
     description: 'The amount of pages and the ingredients in the page',
     status: HttpStatus.OK,
@@ -60,7 +65,8 @@ export class IngredientsController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: "Returns an ingredient" })
+  @Public()
+  @ApiOperation({ summary: 'Returns an ingredient' })
   @ApiResponse({
     description: 'The ingredient',
     status: HttpStatus.OK,
@@ -80,14 +86,21 @@ export class IngredientsController {
   }
 
   @Post()
+  @ApiBearerAuth()
+  @Can(IngredientsPolicy, 'edit')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: "Creates an ingredient" })
+  @ApiResponse({
+    description: 'If the logged in user is not an admin.',
+    status: HttpStatus.FORBIDDEN,
+  })
+  @ApiOperation({ summary: 'Creates an ingredient' })
   @ApiResponse({
     description: 'The created ingredient',
     status: HttpStatus.CREATED,
     standardSchema: ingredientResponseSchema,
   })
   @SerializeOptions({ schema: ingredientResponseSchema })
+  @ConstraintSchema(createIngredientSchema)
   create(
     @Body({ schema: createIngredientSchema })
     body: CreateIngredientDto,
@@ -96,8 +109,14 @@ export class IngredientsController {
   }
 
   @Patch(':id')
+  @ApiBearerAuth()
+  @Can(IngredientsPolicy, 'edit')
   @SerializeOptions({ schema: ingredientResponseSchema })
-  @ApiOperation({ summary: "Updates an ingredient" })
+  @ApiOperation({ summary: 'Updates an ingredient' }) 
+  @ApiResponse({
+    description: 'If the logged in user is not an admin.',
+    status: HttpStatus.FORBIDDEN,
+  })
   @ApiResponse({
     description: 'The updated ingredient',
     status: HttpStatus.OK,
@@ -107,6 +126,7 @@ export class IngredientsController {
     description: 'No ingredient with the id',
     status: HttpStatus.NOT_FOUND,
   })
+  @ConstraintSchema(updateIngredientSchema)
   async update(
     @Param('id', { schema: z.uuid() }) id: string,
     @Body({ schema: updateIngredientSchema })
@@ -118,10 +138,17 @@ export class IngredientsController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: "Deletes an ingredient" })
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Can(IngredientsPolicy, 'edit')
+  @ApiOperation({ summary: 'Deletes an ingredient' })
   @ApiResponse({
     description: 'The ingredient has been deleted',
-    status: HttpStatus.OK,
+    status: HttpStatus.NO_CONTENT,
+  })
+  @ApiResponse({
+    description: 'If the logged in user is not an admin.',
+    status: HttpStatus.FORBIDDEN,
   })
   @ApiResponse({
     description: 'No ingredient with the id',
@@ -131,4 +158,6 @@ export class IngredientsController {
     if (!(await this.ingredientsService.remove(id)))
       throw new NotFoundException('Ingredient not found.');
   }
+
+  //TODO: file uplaod
 }
