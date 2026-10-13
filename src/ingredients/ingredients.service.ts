@@ -3,6 +3,9 @@ import { EntityManager } from 'typeorm';
 import { Ingredient } from '../entities/ingredient.entity.js';
 import { InjectEntityManager } from '@nestjs/typeorm';
 
+export type IngredientsPage = { ingredients: Ingredient[]; total: number };
+export type IngredientInput = Partial<Omit<Ingredient, 'id' | 'cocktailIngredients'>>;
+
 @Injectable()
 export class IngredientsService {
   constructor(
@@ -13,7 +16,7 @@ export class IngredientsService {
   async findPaginated(
     take: number,
     skip: number,
-  ): Promise<{ ingredients: Ingredient[]; total: number }> {
+  ): Promise<IngredientsPage> {
     const result = await this.entityManager.findAndCount(Ingredient, {
       take,
       skip,
@@ -27,17 +30,19 @@ export class IngredientsService {
 
   async remove(id: string): Promise<boolean> {
     const res = await this.entityManager.delete(Ingredient, { id });
-    return res.affected ? true : false; //TODO: test if driver supports affected
+    return res.affected ? true : false;
   }
 
-  create(ingredient: Partial<Ingredient>): Promise<Ingredient> {
+  create(
+    ingredient: IngredientInput
+  ): Promise<Ingredient> {
     const created = this.entityManager.create(Ingredient, ingredient);
     return this.entityManager.save(Ingredient, created);
   }
 
   async update(
     id: string,
-    ingredient: Partial<Ingredient>,
+    ingredient: IngredientInput
   ): Promise<Ingredient | null> {
     const res = await this.entityManager.update(
       Ingredient,
