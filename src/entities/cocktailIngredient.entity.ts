@@ -1,4 +1,11 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryColumn,
+  Unique,
+} from 'typeorm';
 import type { Cocktail } from './cocktail.entity.js';
 import type { Ingredient } from './ingredient.entity.js';
 
@@ -6,14 +13,18 @@ export enum IngredientUnit {
   ML = 'millilitre',
   PIECE = 'piece',
   DASHES = 'dashes',
-  OTHER = 'other'
+  OTHER = 'other',
 }
+
+export const COCKTAIL_INGREDIENT_PK = 'PK_COCKTAIL_INGREDIENT';
+export const COCKTAIL_INGREDIENT_INGREDIENT_FK =
+  'FK_COCKTAIL_INGREDIENT_INGREDIENT';
 
 @Entity()
 export class CocktailIngredient {
-  @PrimaryColumn('uuid')
+  @PrimaryColumn('uuid', { primaryKeyConstraintName: COCKTAIL_INGREDIENT_PK })
   cocktailId: string;
-  @PrimaryColumn('uuid')
+  @PrimaryColumn('uuid', { primaryKeyConstraintName: COCKTAIL_INGREDIENT_PK })
   ingredientId: string;
 
   @JoinColumn({ name: 'cocktailId' })
@@ -23,7 +34,10 @@ export class CocktailIngredient {
   })
   cocktail: Cocktail;
 
-  @JoinColumn({ name: 'ingredientId' })
+  @JoinColumn({
+    name: 'ingredientId',
+    foreignKeyConstraintName: COCKTAIL_INGREDIENT_INGREDIENT_FK,
+  })
   @ManyToOne(
     'Ingredient',
     (ingredient: Ingredient) => ingredient.cocktailIngredients,

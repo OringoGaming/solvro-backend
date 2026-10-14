@@ -1,10 +1,28 @@
 import { Injectable } from '@nestjs/common';
-import { EntityManager } from 'typeorm';
+import {
+  DeepPartial,
+  Entity,
+  EntityManager,
+  Equal,
+  ILike,
+  Like,
+  QueryFailedError,
+} from 'typeorm';
 import { Ingredient } from '../entities/ingredient.entity.js';
 import { InjectEntityManager } from '@nestjs/typeorm';
+import { IngredientImage } from '../entities/file.entity.js';
 
 export type IngredientsPage = { ingredients: Ingredient[]; total: number };
-export type IngredientInput = Partial<Omit<Ingredient, 'id' | 'cocktailIngredients'>>;
+export type IngredientInput = Partial<
+  Omit<Ingredient, 'id' | 'cocktailIngredients' | 'image'>
+>;
+
+export type IngredientsFilter = {
+  name?: string;
+  alcoholic?: boolean;
+  orderBy?: 'name' | 'alcoholic';
+  orderDir?: 'ASC' | 'DESC';
+};
 
 @Injectable()
 export class IngredientsService {
@@ -16,10 +34,23 @@ export class IngredientsService {
   async findPaginated(
     take: number,
     skip: number,
+    filter?: IngredientsFilter,
   ): Promise<IngredientsPage> {
+    const orderDir = filter?.orderDir ?? 'ASC';
+    const order = filter?.orderBy
+      ? filter.orderBy === 'name'
+        ? { name: orderDir }
+        : { alcoholic: orderDir }
+      : undefined;
+
     const result = await this.entityManager.findAndCount(Ingredient, {
       take,
       skip,
+      where: {
+        name: filter?.name ? ILike(`%${filter.name}`) : undefined,
+        alcoholic: filter?.alcoholic ? Equal(filter.alcoholic) : undefined,
+      },
+      order,
     });
     return { ingredients: result[0], total: result[1] };
   }
@@ -33,16 +64,14 @@ export class IngredientsService {
     return res.affected ? true : false;
   }
 
-  create(
-    ingredient: IngredientInput
-  ): Promise<Ingredient> {
+  async create(ingredient: IngredientInput): Promise<Ingredient> {
     const created = this.entityManager.create(Ingredient, ingredient);
-    return this.entityManager.save(Ingredient, created);
+    return await this.entityManager.save(Ingredient, created);
   }
 
   async update(
     id: string,
-    ingredient: IngredientInput
+    ingredient: IngredientInput,
   ): Promise<Ingredient | null> {
     const res = await this.entityManager.update(
       Ingredient,
@@ -54,4 +83,11 @@ export class IngredientsService {
     // mniej round tripów do bazy
     return res.raw[0];
   }
+
+  // async addImage(id: string, image: Omit<IngredientImage, 'id'>) {
+  //   await this.entityManager.transaction(async (em) => {
+  //     await em.insert();
+  //     await em.delete(IngredientImage, { ingredientId: Equal(id) });
+  //   });
+  // }
 }

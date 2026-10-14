@@ -5,15 +5,21 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  Unique,
 } from 'typeorm';
 import type { CocktailCategory } from './cocktailCategory.entity.js';
 import type { CocktailIngredient } from './cocktailIngredient.entity.js';
+import type { User } from './user.entity.js';
+
+export const COCKTAIL_UNIQUE_NAME = 'UQ_COCKTAIL_NAME';
+export const COCKTAIL_CATEGORY_FK = 'FK_COCKTAIL_CATEGORY';
 
 @Entity()
+@Unique(COCKTAIL_UNIQUE_NAME, ['name'])
 export class Cocktail {
   @PrimaryGeneratedColumn('uuid')
   id: string;
-  @Column({ type: 'text', unique: true })
+  @Column({ type: 'text' })
   name: string;
 
   @Column({ type: 'text' })
@@ -26,7 +32,10 @@ export class Cocktail {
       nullable: false,
     },
   )
-  @JoinColumn({ name: 'categoryId' })
+  @JoinColumn({
+    name: 'categoryId',
+    foreignKeyConstraintName: COCKTAIL_CATEGORY_FK,
+  })
   category: CocktailCategory;
 
   @Column()
@@ -40,4 +49,10 @@ export class Cocktail {
     },
   )
   cocktailIngredients: CocktailIngredient[];
+
+  @ManyToOne('User', (user: User) => user.cocktails, {
+    onDelete: 'CASCADE',
+    nullable: false,
+  })
+  user: User;
 }

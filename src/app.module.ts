@@ -11,17 +11,11 @@ import { CocktailCategory } from './entities/cocktailCategory.entity.js';
 import { IngredientsModule } from './ingredients/ingredients.module.js';
 import { APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { AuthenticationModule } from '@nestjs/authentication';
-import { ConstraintErrorInterceptor } from './shared/constraintError.interceptor.js';
 import { ConfigModule } from '@nestjs/config';
 import { SeedModule } from './seed/seed.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { User } from './entities/user.entity.js';
-
-const host = process.env.DB_HOST || 'localhost';
-const port = parseInt(process.env.DB_PORT || '5432');
-const username = process.env.DB_USERNAME || 'postgres';
-const password = process.env.DB_PASSWORD || 'postgres';
-const database = process.env.DB_DATABASE || 'backend';
+import { IngredientImage } from './entities/file.entity.js';
 
 @Module({
   providers: [
@@ -39,30 +33,31 @@ const database = process.env.DB_DATABASE || 'backend';
     AuthenticationModule.forRoot({
       accessToken: {
         key: process.env.JWT_SECRET!,
-        issuer: 'backend',
+        issuer: 'cocktails',
         ttl: '15m',
       },
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host,
-      port,
-      username,
-      password,
-      database,
+      host: process.env.DB_HOST,
+      port: parseInt(process.env.DB_PORT!),
+      username: process.env.DB_USERNAME,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_DATABASE,
       entities: [
         Cocktail,
         CocktailIngredient,
         Ingredient,
         CocktailCategory,
         User,
+        IngredientImage,
       ],
       synchronize: false,
     }),
     AuthModule,
     //CocktailsModule,
     IngredientsModule,
-    // SeedModule,
+    SeedModule,
   ],
 })
 export class AppModule {}
