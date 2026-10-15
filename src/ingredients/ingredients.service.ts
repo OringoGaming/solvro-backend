@@ -18,10 +18,11 @@ export type IngredientInput = Partial<
 >;
 
 export type IngredientsFilter = {
+  take: number;
+  skip: number;
   name?: string;
   alcoholic?: boolean;
-  orderBy?: 'name' | 'alcoholic';
-  orderDir?: 'ASC' | 'DESC';
+  sort?: ('name' | 'alcoholic')[];
 };
 
 @Injectable()
@@ -31,27 +32,37 @@ export class IngredientsService {
     private readonly entityManager: EntityManager,
   ) {}
 
-  async findPaginated(
-    take: number,
-    skip: number,
-    filter?: IngredientsFilter,
-  ): Promise<IngredientsPage> {
-    const orderDir = filter?.orderDir ?? 'ASC';
-    const order = filter?.orderBy
-      ? filter.orderBy === 'name'
-        ? { name: orderDir }
-        : { alcoholic: orderDir }
-      : undefined;
+  async findPaginated({
+    take,
+    skip,
+    name,
+    alcoholic,
+    sort,
+  }: IngredientsFilter): Promise<IngredientsPage> {
+    let query = this.entityManager
+      .createQueryBuilder()
+      .select()
+      .from(Ingredient, 'ingredient')
+      .take(take)
+      .offset(skip);
+    if (name)
+      query = query.andWhere("ingredient.name ILIKE '%' || :name", {
+        name,
+      });
+    if (alcoholic !== undefined)
+      query = query.andWhere('ingredient.alcoholic = :alcoholic', {
+        alcoholic: alcoholic,
+      });
 
-    const result = await this.entityManager.findAndCount(Ingredient, {
-      take,
-      skip,
-      where: {
-        name: filter?.name ? ILike(`%${filter.name}`) : undefined,
-        alcoholic: filter?.alcoholic ? Equal(filter.alcoholic) : undefined,
-      },
-      order,
+    sort?.forEach((v) => {
+      // prevent injection.
+      query = query.addOrderBy(
+        v[0] === 'name' ? 'ingredient.name' : 'ingredient.alcoholic',
+      );
     });
+    query = query.addOrderBy('ingredient.id');
+
+    const result = await query.getManyAndCount();
     return { ingredients: result[0], total: result[1] };
   }
 

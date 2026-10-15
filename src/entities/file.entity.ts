@@ -23,7 +23,10 @@ export class IngredientImage {
     orphanedRowAction: 'delete',
     nullable: false,
   })
-  @JoinColumn({ name: 'ingredientId', foreignKeyConstraintName: FK_INGREDIENT_IMAGE })
+  @JoinColumn({
+    name: 'ingredientId',
+    foreignKeyConstraintName: FK_INGREDIENT_IMAGE,
+  })
   ingredient: Ingredient;
 
   @Column()

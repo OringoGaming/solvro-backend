@@ -16,7 +16,10 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import { IngredientsService } from './ingredients.service.js';
+import {
+  IngredientsFilter,
+  IngredientsService,
+} from './ingredients.service.js';
 import { createIngredientSchema } from './dto/createIngredient.dto.js';
 import type { CreateIngredientDto } from './dto/createIngredient.dto.js';
 import {
@@ -53,7 +56,7 @@ import { Can } from '@nestjs/authorization';
 import { Public } from '@nestjs/authentication';
 import type { Express } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { join } from 'path';
+import { IngredientsFilterDto, ingredientsFilterSchema } from './dto/ingredientsFilter.dto.js';
 
 @ApiTags('ingredients')
 @Controller('ingredients')
@@ -69,12 +72,22 @@ export class IngredientsController {
   })
   @SerializeOptions({ schema: ingredientsPageSchema })
   async page(
-    @Query({ schema: paginationSchema }) { pageSize, page }: PaginationDto,
-  ): Promise<IngredientsPageDto> {
-    const { ingredients, total } = await this.ingredientsService.findPaginated(
+    @Query({ schema: z.intersection(paginationSchema, ingredientsFilterSchema) })
+    {
       pageSize,
-      page * pageSize,
-    );
+      page,
+      name,
+      alcoholic,
+      sort,
+    }: PaginationDto & IngredientsFilterDto,
+  ): Promise<IngredientsPageDto> {
+    const { ingredients, total } = await this.ingredientsService.findPaginated({
+      take: pageSize,
+      skip: page * pageSize,
+      name,
+      alcoholic,
+      sort,
+    });
 
     return {
       pageCount: Math.max(1, Math.ceil(total / pageSize)),
