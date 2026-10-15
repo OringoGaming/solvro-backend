@@ -1,10 +1,11 @@
-import { DataSource } from 'typeorm'
+import { DataSource } from 'typeorm';
+import "dotenv/config";
 
-const host = process.env.DB_HOST || 'localhost';
-const port = parseInt(process.env.DB_PORT || "5432");
-const username = process.env.DB_USERNAME || "postgres";
-const password = process.env.DB_PASSWORD || "postgres";
-const database = process.env.DB_DATABASE || "backend";
+const host = process.env.DB_HOST
+const port = parseInt(process.env.DB_PORT!);
+const username = process.env.DB_USERNAME;
+const password = process.env.DB_PASSWORD;
+const database = process.env.DB_DATABASE;
 
 export default new DataSource({
   type: 'postgres',
