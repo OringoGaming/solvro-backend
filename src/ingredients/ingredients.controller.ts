@@ -10,6 +10,7 @@ import {
   ParseFilePipeBuilder,
   Patch,
   Post,
+  Put,
   Query,
   SerializeOptions,
   StreamableFile,
@@ -184,7 +185,7 @@ export class IngredientsController {
       throw new NotFoundException('Ingredient not found.');
   }
 
-  @Post(':id/image')
+  @Put(':id/image')
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
   @Can(IngredientsPolicy, 'edit')
@@ -200,6 +201,7 @@ export class IngredientsController {
       required: ['file'],
     },
   })
+  @ApiOperation({summary: 'Uploads an ingredient image.'})
   @ApiNotFoundResponse({ description: 'If the ingredient is not found.' })
   @ApiUnprocessableEntityResponse({
     description:
@@ -226,6 +228,7 @@ export class IngredientsController {
   @ApiBearerAuth()
   @ApiNoContentResponse({ description:"If the image was deleted sucessfully." })
   @ApiNotFoundResponse({ description: 'If the ingredient is not found or the ingredient does not have an image.' })
+  @ApiOperation({summary: 'Deletes an ingredient image.'})
   @Delete(':id/image')
   @Can(IngredientsPolicy, 'edit')
   @SerializeOptions({ schema: ingredientResponseSchema })
@@ -238,6 +241,7 @@ export class IngredientsController {
   @ApiNotFoundResponse({description: 'If the ingredient does not have an image or it does not exist. '})
   @ApiOkResponse({description: 'The image of the ingredient.'})
   @Public()
+  @ApiOperation({summary: 'Gets the ingredient image.'})
   @Get(":id/image")
   async getImage(@Param('id', {schema: z.uuid()}) id: string): Promise<StreamableFile> {
     const image = await this.ingredientsService.findImage(id);
