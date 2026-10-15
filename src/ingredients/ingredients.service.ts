@@ -10,7 +10,8 @@ import {
 } from 'typeorm';
 import { Ingredient } from '../entities/ingredient.entity.js';
 import { InjectEntityManager } from '@nestjs/typeorm';
-import { IngredientImage } from '../entities/file.entity.js';
+import { IngredientImage } from '../entities/ingredientImage.entity.js';
+import { de } from 'zod/locales';
 
 export type IngredientsPage = { ingredients: Ingredient[]; total: number };
 export type IngredientInput = Partial<
@@ -21,9 +22,16 @@ export type IngredientsFilter = {
   take: number;
   skip: number;
   name?: string;
+  description?: string;
   alcoholic?: boolean;
   sort?: ('name' | 'alcoholic')[];
+  sortDir?: 'ASC' | 'DESC';
 };
+
+export type ImageInput = Omit<
+  IngredientImage,
+  'id' | 'ingredientId' | 'ingredient'
+>;
 
 @Injectable()
 export class IngredientsService {
@@ -36,31 +44,35 @@ export class IngredientsService {
     take,
     skip,
     name,
+    description,
+    sortDir,
     alcoholic,
     sort,
   }: IngredientsFilter): Promise<IngredientsPage> {
     let query = this.entityManager
-      .createQueryBuilder()
-      .select()
-      .from(Ingredient, 'ingredient')
+      .createQueryBuilder(Ingredient, 'ingredient')
       .take(take)
-      .offset(skip);
+      .skip(skip);
     if (name)
-      query = query.andWhere("ingredient.name ILIKE '%' || :name", {
+      query = query.andWhere("ingredient.name ILIKE '%' || :name || '%'", {
         name,
+      });
+    if (description)
+      query = query.andWhere("ingredient.description ILIKE '%' || :description || '%'", {
+        description,
       });
     if (alcoholic !== undefined)
       query = query.andWhere('ingredient.alcoholic = :alcoholic', {
-        alcoholic: alcoholic,
+        alcoholic,
       });
 
     sort?.forEach((v) => {
       // prevent injection.
       query = query.addOrderBy(
-        v[0] === 'name' ? 'ingredient.name' : 'ingredient.alcoholic',
+        v === 'name' ? 'ingredient.name' : 'ingredient.alcoholic', sortDir
       );
     });
-    query = query.addOrderBy('ingredient.id');
+    query = query.addOrderBy('ingredient.id', sortDir);
 
     const result = await query.getManyAndCount();
     return { ingredients: result[0], total: result[1] };
@@ -91,14 +103,38 @@ export class IngredientsService {
       { returning: '*' },
     );
     if (!res.affected) return null;
-    // mniej round tripów do bazy
+    // less db round trips
     return res.raw[0];
   }
 
-  // async addImage(id: string, image: Omit<IngredientImage, 'id'>) {
-  //   await this.entityManager.transaction(async (em) => {
-  //     await em.insert();
-  //     await em.delete(IngredientImage, { ingredientId: Equal(id) });
-  //   });
-  // }
+  /**
+   * 
+   * @param id the id of the ingredient
+   * @param image the image or undefined to delete.
+   * @returns True if the image is defined and the 
+   */
+  async updateImage(id: string, image?: ImageInput): Promise<boolean> {
+    if (!image) {
+      const result = await this.entityManager.delete(IngredientImage, {
+        ingredientId: id
+      });
+      return result.affected !== 0;
+    }
+
+    //TODO: try and check constraint
+    await this.entityManager.upsert(
+      IngredientImage,
+      { ...image, ingredientId: id },
+      {
+        conflictPaths: { ingredientId: true },
+      },
+    );
+    return true;
+  }
+
+  async findImage(id: string): Promise<IngredientImage | null> {
+    return await this.entityManager.findOneBy(IngredientImage, {
+      ingredientId: id
+    });
+  }
 }

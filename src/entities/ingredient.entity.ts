@@ -8,7 +8,7 @@ import {
   Unique,
 } from 'typeorm';
 import type { CocktailIngredient } from './cocktailIngredient.entity.js';
-import type { IngredientImage } from './file.entity.js';
+import type { IngredientImage } from './ingredientImage.entity.js';
 
 export const INGREDIENT_UNIQUE_NAME = 'UQ_INGREDIENT_NAME';
 export const INGREDIENT_NAME_LENGTH = 50;

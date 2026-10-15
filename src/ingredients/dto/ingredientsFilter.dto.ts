@@ -1,28 +1,18 @@
 import z from 'zod';
-import { INGREDIENT_NAME_LENGTH } from '../../entities/ingredient.entity.js';
+import { INGREDIENT_DESCRIPTION_LENGTH, INGREDIENT_NAME_LENGTH } from '../../entities/ingredient.entity.js';
 
 export const ingredientsFilterSchema = z
   .strictObject({
     name: z.string().max(INGREDIENT_NAME_LENGTH).optional(),
-    alcoholic: z.coerce.boolean().optional(),
+    description: z.string().max(INGREDIENT_DESCRIPTION_LENGTH).optional(),
+    // coerce evals any string to true
+    alcoholic: z.preprocess((v) => typeof v === 'string' ? 'true' === v : v, z.boolean()).optional(),    
     sort: z
-      .array(z.enum(['name', 'alcoholic']))
-      .superRefine((sort, ctx) => {
-        const seen = new Set<string>();
-        for (const [i, item] of sort.entries()) {
-          if (seen.has(item)) {
-            ctx.addIssue({
-              code: 'invalid_value',
-              message: 'Duplicate sort field.',
-              path: [i],
-              values: [item],
-            });
-            continue;
-          }
-          seen.add(item);
-        }
-      })
+      //1 query param evals to string
+      .preprocess((v) => (typeof v === 'string' ? [v] : v), z.array(z.enum(['name', 'alcoholic'])))
+      .refine((sort) => new Set(sort).size === sort.length, 'Duplicate sort field.')
       .optional(),
+    sortDir: z.enum(['ASC', 'DESC']).optional()
   })
   .optional();
 

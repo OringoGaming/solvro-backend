@@ -15,7 +15,7 @@ import { ConfigModule } from '@nestjs/config';
 import { SeedModule } from './seed/seed.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { User } from './entities/user.entity.js';
-import { IngredientImage } from './entities/file.entity.js';
+import { IngredientImage } from './entities/ingredientImage.entity.js';
 
 @Module({
   providers: [
