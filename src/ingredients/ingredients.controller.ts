@@ -87,7 +87,7 @@ export class IngredientsController {
       description,
       alcoholic,
       sort,
-      sortDir
+      sortDir,
     }: PaginationDto & IngredientsFilterDto,
   ): Promise<IngredientsPageDto> {
     const { ingredients, total } = await this.ingredientsService.findPaginated({
@@ -97,7 +97,7 @@ export class IngredientsController {
       description,
       alcoholic,
       sort,
-      sortDir
+      sortDir,
     });
 
     return {
@@ -201,7 +201,7 @@ export class IngredientsController {
       required: ['file'],
     },
   })
-  @ApiOperation({summary: 'Uploads an ingredient image.'})
+  @ApiOperation({ summary: 'Uploads an ingredient image.' })
   @ApiNotFoundResponse({ description: 'If the ingredient is not found.' })
   @ApiUnprocessableEntityResponse({
     description:
@@ -217,18 +217,25 @@ export class IngredientsController {
     )
     file: Express.Multer.File,
   ) {
-    if (!await this.ingredientsService.updateImage(id, {
-      mimeType: file.mimetype,
-      data: file.buffer,
-    }))
+    if (
+      !(await this.ingredientsService.updateImage(id, {
+        mimeType: file.mimetype,
+        data: file.buffer,
+      }))
+    )
       throw new NotFoundException('Ingredient not found.');
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBearerAuth()
-  @ApiNoContentResponse({ description:"If the image was deleted sucessfully." })
-  @ApiNotFoundResponse({ description: 'If the ingredient is not found or the ingredient does not have an image.' })
-  @ApiOperation({summary: 'Deletes an ingredient image.'})
+  @ApiNoContentResponse({
+    description: 'If the image was deleted sucessfully.',
+  })
+  @ApiNotFoundResponse({
+    description:
+      'If the ingredient is not found or the ingredient does not have an image.',
+  })
+  @ApiOperation({ summary: 'Deletes an ingredient image.' })
   @Delete(':id/image')
   @Can(IngredientsPolicy, 'edit')
   @SerializeOptions({ schema: ingredientResponseSchema })
@@ -238,21 +245,25 @@ export class IngredientsController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @ApiNotFoundResponse({description: 'If the ingredient does not have an image or it does not exist. '})
-  @ApiOkResponse({description: 'The image of the ingredient.'})
+  @ApiNotFoundResponse({
+    description:
+      'If the ingredient does not have an image or it does not exist. ',
+  })
+  @ApiOkResponse({ description: 'The image of the ingredient.' })
   @Public()
-  @ApiOperation({summary: 'Gets the ingredient image.'})
-  @Get(":id/image")
-  async getImage(@Param('id', {schema: z.uuid()}) id: string): Promise<StreamableFile> {
+  @ApiOperation({ summary: 'Gets the ingredient image.' })
+  @Get(':id/image')
+  async getImage(
+    @Param('id', { schema: z.uuid() }) id: string,
+  ): Promise<StreamableFile> {
     const image = await this.ingredientsService.findImage(id);
     if (image === null)
-      throw new NotFoundException("Ingredient does not exist or it does not have an image.");
+      throw new NotFoundException(
+        'Ingredient does not exist or it does not have an image.',
+      );
 
-    return new StreamableFile(
-      image.data,
-      {
-        type: image.mimeType,
-      }
-    )
+    return new StreamableFile(image.data, {
+      type: image.mimeType,
+    });
   }
 }

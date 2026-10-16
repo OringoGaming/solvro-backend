@@ -25,7 +25,7 @@ export class IngredientImage {
     onDelete: 'CASCADE',
     orphanedRowAction: 'delete',
     nullable: false,
-    createForeignKeyConstraints: true
+    createForeignKeyConstraints: true,
   })
   @JoinColumn({
     name: 'ingredientId',
