@@ -42,6 +42,7 @@ import {
 import {
   ApiBearerAuth,
   ApiBody,
+  ApiConflictResponse,
   ApiConsumes,
   ApiCreatedResponse,
   ApiForbiddenResponse,
@@ -70,7 +71,7 @@ export class IngredientsController {
 
   @Get()
   @Public()
-  @ApiOperation({ summary: 'Returns an page of ingredients' })
+  @ApiOperation({ summary: 'Returns a page of ingredients' })
   @ApiOkResponse({
     description: 'The amount of pages and the ingredients in the page',
     standardSchema: ingredientsPageSchema,
@@ -126,18 +127,21 @@ export class IngredientsController {
   }
 
   @Post()
-  @ApiBearerAuth()
   @Can(IngredientsPolicy, 'edit')
   @HttpCode(HttpStatus.CREATED)
-  @ApiForbiddenResponse({
-    description: 'If the logged in user is not an admin.',
-  })
+  @SerializeOptions({ schema: ingredientResponseSchema })
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Creates an ingredient' })
   @ApiCreatedResponse({
     description: 'The created ingredient',
     standardSchema: ingredientResponseSchema,
   })
-  @SerializeOptions({ schema: ingredientResponseSchema })
+  @ApiForbiddenResponse({
+    description: 'If the logged in user is not an admin.',
+  })
+  @ApiConflictResponse({
+    description: "The ingredient's name is already taken.",
+  })
   create(
     @Body({ schema: createIngredientSchema })
     body: CreateIngredientDto,
@@ -146,10 +150,13 @@ export class IngredientsController {
   }
 
   @Patch(':id')
-  @ApiBearerAuth()
   @Can(IngredientsPolicy, 'edit')
   @SerializeOptions({ schema: ingredientResponseSchema })
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Updates an ingredient' })
+  @ApiConflictResponse({
+    description: "The ingredient's name is already taken.",
+  })
   @ApiForbiddenResponse({
     description: 'If the logged in user is not an admin.',
   })
@@ -175,6 +182,7 @@ export class IngredientsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @Can(IngredientsPolicy, 'edit')
   @ApiOperation({ summary: 'Deletes an ingredient' })
+  @ApiConflictResponse({ description: 'The ingredient is used by cocktails.' })
   @ApiNoContentResponse({ description: 'The ingredient has been deleted' })
   @ApiForbiddenResponse({
     description: 'If the logged in user is not an admin.',
@@ -189,8 +197,9 @@ export class IngredientsController {
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
   @Can(IngredientsPolicy, 'edit')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiCreatedResponse({ description: 'The image was saved.' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiNoContentResponse({ description: 'The image was saved.' })
   @ApiBody({
     description: 'An image of the ingredient.',
     schema: {
@@ -207,11 +216,11 @@ export class IngredientsController {
     description:
       'If the file is neither a png nor a jpeg or is over 2mb in size.',
   })
-  @UseInterceptors(FileInterceptor('file'))
   async upload(
     @Param('id', { schema: z.uuid() }) id: string,
     @UploadedFile(
       new ParseFilePipeBuilder()
+        .addFileTypeValidator({ fileType: /^image\/(png|jpeg)$/ })
         .addMaxSizeValidator({ maxSize: 2 * 1024 * 1024 })
         .build({ errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY }),
     )
@@ -229,7 +238,7 @@ export class IngredientsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBearerAuth()
   @ApiNoContentResponse({
-    description: 'If the image was deleted sucessfully.',
+    description: 'If the image was deleted successfully.',
   })
   @ApiNotFoundResponse({
     description:
@@ -238,7 +247,6 @@ export class IngredientsController {
   @ApiOperation({ summary: 'Deletes an ingredient image.' })
   @Delete(':id/image')
   @Can(IngredientsPolicy, 'edit')
-  @SerializeOptions({ schema: ingredientResponseSchema })
   async deleteImage(@Param('id', { schema: z.uuid() }) id: string) {
     const res = await this.ingredientsService.updateImage(id);
     if (!res) throw new NotFoundException('Image or ingredient not found.');

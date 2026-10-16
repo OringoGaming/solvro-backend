@@ -23,6 +23,7 @@ import {
   PG_CONSTRAINT_CODES,
   PgErrorCode,
 } from '../shared/utils/dbErrors.js';
+import { COCKTAIL_INGREDIENT_INGREDIENT_FK } from '../entities/cocktailIngredient.entity.js';
 
 export type IngredientsPage = { ingredients: Ingredient[]; total: number };
 export type IngredientInput = Partial<
@@ -98,7 +99,19 @@ export class IngredientsService {
   }
 
   async remove(id: string): Promise<boolean> {
-    const res = await this.entityManager.delete(Ingredient, { id });
+    let res;
+    try {
+      res = await this.entityManager.delete(Ingredient, { id });
+    } catch (e) {
+      const err = extractConstraintError(e);
+      if (
+        err &&
+        err.code === PgErrorCode.RESTRICT_VIOLATION &&
+        err.constraint === COCKTAIL_INGREDIENT_INGREDIENT_FK
+      )
+        throw new ConflictException('The ingredient is still in use.');
+      throw e;
+    }
     return res.affected ? true : false;
   }
 
@@ -107,14 +120,7 @@ export class IngredientsService {
     try {
       return await this.entityManager.save(Ingredient, created);
     } catch (e) {
-      const err = extractConstraintError(e);
-      if (
-        !err ||
-        err.code !== PgErrorCode.UNIQUE_VIOLATION ||
-        err.detail !== INGREDIENT_UNIQUE_NAME
-      )
-        throw e;
-      throw new ConflictException('Ingredient name is taken.');
+      throw this.checkNameUniqueError(e);
     }
   }
 
@@ -122,15 +128,28 @@ export class IngredientsService {
     id: string,
     ingredient: IngredientInput,
   ): Promise<Ingredient | null> {
-    const res = await this.entityManager.update(
-      Ingredient,
-      { id },
-      ingredient,
-      { returning: '*' },
-    );
+    let res;
+    try {
+      res = await this.entityManager.update(Ingredient, { id }, ingredient, {
+        returning: '*',
+      });
+    } catch (e) {
+      throw this.checkNameUniqueError(e);
+    }
     if (!res.affected) return null;
     // less db round trips
     return res.raw[0];
+  }
+
+  private checkNameUniqueError(error: any): any {
+    const err = extractConstraintError(error);
+    if (
+      !err ||
+      err.code !== PgErrorCode.UNIQUE_VIOLATION ||
+      err.detail !== INGREDIENT_UNIQUE_NAME
+    )
+      throw error;
+    throw new ConflictException('Ingredient name is taken.');
   }
 
   /**
