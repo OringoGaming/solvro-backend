@@ -1,11 +1,10 @@
 import {
   Column,
   Entity,
-  JoinColumn,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
-  Unique,
+  Unique
 } from 'typeorm';
 import type { CocktailIngredient } from './cocktailIngredient.entity.js';
 import type { IngredientImage } from './ingredientImage.entity.js';

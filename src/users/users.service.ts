@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
-import { User } from '../entities/user.entity.js';
-import { EntityManager } from 'typeorm';
-import { InjectEntityManager } from '@nestjs/typeorm';
 import { PasswordHasher } from '@nestjs/authentication';
+import { Injectable } from '@nestjs/common';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
+import { User } from '../entities/user.entity.js';
 
 @Injectable()
 export class UsersService {

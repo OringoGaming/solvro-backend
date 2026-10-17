@@ -1,8 +1,7 @@
 import z from 'zod';
 import {
   INGREDIENT_DESCRIPTION_LENGTH,
-  INGREDIENT_NAME_LENGTH,
-  INGREDIENT_UNIQUE_NAME,
+  INGREDIENT_NAME_LENGTH
 } from '../../entities/ingredient.entity.js';
 
 export const createIngredientSchema = z.strictObject({

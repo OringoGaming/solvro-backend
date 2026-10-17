@@ -11,11 +11,12 @@ import type { CocktailCategory } from './cocktailCategory.entity.js';
 import type { CocktailIngredient } from './cocktailIngredient.entity.js';
 import type { User } from './user.entity.js';
 
-export const COCKTAIL_UNIQUE_NAME = 'UQ_COCKTAIL_NAME';
-export const COCKTAIL_CATEGORY_FK = 'FK_COCKTAIL_CATEGORY';
+export const UQ_COCKTAIL_NAME = 'UQ_COCKTAIL_NAME';
+export const FK_COCKTAIL_CATEGORY = 'FK_COCKTAIL_CATEGORY';
+export const FK_INGREDIENT_USER = 'FK_COCKTAIL_USER';
 
 @Entity()
-@Unique(COCKTAIL_UNIQUE_NAME, ['name'])
+@Unique(UQ_COCKTAIL_NAME, ['name'])
 export class Cocktail {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -24,6 +25,7 @@ export class Cocktail {
 
   @Column({ type: 'text' })
   instruction: string;
+
   @ManyToOne(
     'CocktailCategory',
     (category: CocktailCategory) => category.cocktails,
@@ -34,7 +36,7 @@ export class Cocktail {
   )
   @JoinColumn({
     name: 'categoryId',
-    foreignKeyConstraintName: COCKTAIL_CATEGORY_FK,
+    foreignKeyConstraintName: FK_COCKTAIL_CATEGORY,
   })
   category: CocktailCategory;
 
@@ -54,5 +56,9 @@ export class Cocktail {
     onDelete: 'CASCADE',
     nullable: false,
   })
+  @JoinColumn({ name: 'userId', foreignKeyConstraintName: FK_INGREDIENT_USER })
   user: User;
+
+  @Column()
+  userId: string;
 }

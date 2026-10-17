@@ -1,20 +1,19 @@
 import { ConflictException, Injectable } from '@nestjs/common';
+import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
+import { COCKTAIL_INGREDIENT_INGREDIENT_FK } from '../entities/cocktailIngredient.entity.js';
 import {
   Ingredient,
   INGREDIENT_UNIQUE_NAME,
 } from '../entities/ingredient.entity.js';
-import { InjectEntityManager } from '@nestjs/typeorm';
 import {
   FK_INGREDIENT_IMAGE,
   IngredientImage,
 } from '../entities/ingredientImage.entity.js';
 import {
-  extractConstraintError,
   isConstraintError,
-  PgErrorCode,
+  PgErrorCode
 } from '../shared/utils/dbErrors.js';
-import { COCKTAIL_INGREDIENT_INGREDIENT_FK } from '../entities/cocktailIngredient.entity.js';
 
 export type IngredientsPage = { ingredients: Ingredient[]; total: number };
 export type IngredientInput = Partial<

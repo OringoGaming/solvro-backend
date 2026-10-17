@@ -2,6 +2,9 @@ import { QueryFailedError } from 'typeorm';
 
 export interface ConstraintDriverError {
   code: PgErrorCode;
+  /**
+   * Detail message sent by the driver
+   */
   detail: string;
   /**
    * The name of the constraint

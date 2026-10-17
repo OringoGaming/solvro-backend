@@ -2,8 +2,7 @@ import {
   Column,
   Entity,
   OneToMany,
-  PrimaryGeneratedColumn,
-  Unique,
+  PrimaryGeneratedColumn
 } from 'typeorm';
 import type { Cocktail } from './cocktail.entity.js';
 

@@ -3,8 +3,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  PrimaryColumn,
-  Unique,
+  PrimaryColumn
 } from 'typeorm';
 import type { Cocktail } from './cocktail.entity.js';
 import type { Ingredient } from './ingredient.entity.js';
