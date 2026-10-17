@@ -1,13 +1,5 @@
 import { ConflictException, Injectable } from '@nestjs/common';
-import {
-  DeepPartial,
-  Entity,
-  EntityManager,
-  Equal,
-  ILike,
-  Like,
-  QueryFailedError,
-} from 'typeorm';
+import { EntityManager } from 'typeorm';
 import {
   Ingredient,
   INGREDIENT_UNIQUE_NAME,
@@ -17,10 +9,9 @@ import {
   FK_INGREDIENT_IMAGE,
   IngredientImage,
 } from '../entities/ingredientImage.entity.js';
-import { de } from 'zod/locales';
 import {
   extractConstraintError,
-  PG_CONSTRAINT_CODES,
+  isConstraintError,
   PgErrorCode,
 } from '../shared/utils/dbErrors.js';
 import { COCKTAIL_INGREDIENT_INGREDIENT_FK } from '../entities/cocktailIngredient.entity.js';
@@ -45,6 +36,32 @@ export type ImageInput = Omit<
   'id' | 'ingredientId' | 'ingredient'
 >;
 
+function assertSort(sort?: string) {
+  if (sort !== undefined && sort !== 'name' && sort !== 'alcoholic')
+    throw new Error(
+      `Sort must be 'name', 'alcoholic' or undefined. Is ${sort}.`,
+    );
+}
+
+function assertSortDir(sortDir?: string) {
+  if (sortDir !== undefined && sortDir !== 'ASC' && sortDir !== 'DESC')
+    throw new Error(
+      `Sort direction must be 'ASC', 'DESC' or undefined. Is ${sortDir}.`,
+    );
+}
+
+function toNameConflict(error: unknown): unknown {
+  if (
+    !isConstraintError(
+      error,
+      PgErrorCode.UNIQUE_VIOLATION,
+      INGREDIENT_UNIQUE_NAME,
+    )
+  )
+    return error;
+  return new ConflictException('Ingredient name is taken.');
+}
+
 @Injectable()
 export class IngredientsService {
   constructor(
@@ -61,34 +78,32 @@ export class IngredientsService {
     alcoholic,
     sort,
   }: IngredientsFilter): Promise<IngredientsPage> {
-    let query = this.entityManager
+    const query = this.entityManager
       .createQueryBuilder(Ingredient, 'ingredient')
       .take(take)
       .skip(skip);
     if (name)
-      query = query.andWhere("ingredient.name ILIKE '%' || :name || '%'", {
+      query.andWhere("ingredient.name ILIKE '%' || :name || '%'", {
         name,
       });
     if (description)
-      query = query.andWhere(
+      query.andWhere(
         "ingredient.description ILIKE '%' || :description || '%'",
         {
           description,
         },
       );
     if (alcoholic !== undefined)
-      query = query.andWhere('ingredient.alcoholic = :alcoholic', {
+      query.andWhere('ingredient.alcoholic = :alcoholic', {
         alcoholic,
       });
 
+    assertSortDir(sortDir);
     sort?.forEach((v) => {
-      // prevent injection.
-      query = query.addOrderBy(
-        v === 'name' ? 'ingredient.name' : 'ingredient.alcoholic',
-        sortDir,
-      );
+      assertSort(v);
+      query.addOrderBy(`ingredient.${v}`, sortDir);
     });
-    query = query.addOrderBy('ingredient.id', sortDir);
+    query.addOrderBy('ingredient.id', sortDir);
 
     const result = await query.getManyAndCount();
     return { ingredients: result[0], total: result[1] };
@@ -99,20 +114,14 @@ export class IngredientsService {
   }
 
   async remove(id: string): Promise<boolean> {
-    let res;
     try {
-      res = await this.entityManager.delete(Ingredient, { id });
+      const res = await this.entityManager.delete(Ingredient, { id });
+      return res.affected !== 0;
     } catch (e) {
-      const err = extractConstraintError(e);
-      if (
-        err &&
-        err.code === PgErrorCode.RESTRICT_VIOLATION &&
-        err.constraint === COCKTAIL_INGREDIENT_INGREDIENT_FK
-      )
-        throw new ConflictException('The ingredient is still in use.');
-      throw e;
+      if (!isConstraintError(e, PgErrorCode.RESTRICT_VIOLATION, COCKTAIL_INGREDIENT_INGREDIENT_FK))
+        throw e;
+      throw new ConflictException('The ingredient is still in use.');
     }
-    return res.affected ? true : false;
   }
 
   async create(ingredient: IngredientInput): Promise<Ingredient> {
@@ -120,7 +129,7 @@ export class IngredientsService {
     try {
       return await this.entityManager.save(Ingredient, created);
     } catch (e) {
-      throw this.checkNameUniqueError(e);
+      throw toNameConflict(e);
     }
   }
 
@@ -128,35 +137,24 @@ export class IngredientsService {
     id: string,
     ingredient: IngredientInput,
   ): Promise<Ingredient | null> {
-    let res;
     try {
-      res = await this.entityManager.update(Ingredient, { id }, ingredient, {
+      const res = await this.entityManager.update(Ingredient, { id }, ingredient, {
         returning: '*',
       });
-    } catch (e) {
-      throw this.checkNameUniqueError(e);
-    }
-    if (!res.affected) return null;
-    // less db round trips
-    return res.raw[0];
-  }
+      if (!res.affected) return null;
 
-  private checkNameUniqueError(error: any): any {
-    const err = extractConstraintError(error);
-    if (
-      !err ||
-      err.code !== PgErrorCode.UNIQUE_VIOLATION ||
-      err.detail !== INGREDIENT_UNIQUE_NAME
-    )
-      throw error;
-    throw new ConflictException('Ingredient name is taken.');
+      // less db round trips
+      return res.raw[0];
+    } catch (e) {
+      throw toNameConflict(e);
+    }
   }
 
   /**
-   *
+   * Create the image or delete if undefined.
    * @param id the id of the ingredient
    * @param image the image or undefined to delete.
-   * @returns True if the image is defined and the
+   * @returns True if the image is defined and the ingredient exists or the image is undefined and the ingredient exists and has an image.
    */
   async updateImage(id: string, image?: ImageInput): Promise<boolean> {
     if (!image) {
@@ -175,12 +173,12 @@ export class IngredientsService {
         },
       );
     } catch (e) {
-      const driverError = extractConstraintError(e);
-      if (!driverError) throw e;
-      //ingredient not found.
       if (
-        driverError.code !== PgErrorCode.FOREIGN_KEY_VIOLATION ||
-        driverError.constraint !== FK_INGREDIENT_IMAGE
+        !isConstraintError(
+          e,
+          PgErrorCode.FOREIGN_KEY_VIOLATION,
+          FK_INGREDIENT_IMAGE,
+        )
       )
         throw e;
       return false;

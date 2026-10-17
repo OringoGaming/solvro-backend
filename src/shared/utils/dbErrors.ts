@@ -2,7 +2,6 @@ import { QueryFailedError } from 'typeorm';
 
 export interface ConstraintDriverError {
   code: PgErrorCode;
-  //eg: Key (ingredientId)=(f53c8375-da5a-48ea-97b5-b24543b70332) is not present in table "ingredient".
   detail: string;
   /**
    * The name of the constraint
@@ -32,7 +31,7 @@ export const PG_CONSTRAINT_CODES: PgErrorCode[] = [
 ];
 
 export function extractConstraintError(
-  error: any,
+  error: unknown,
 ): ConstraintDriverError | undefined {
   if (!(error instanceof QueryFailedError)) return undefined;
 
@@ -44,4 +43,17 @@ export function extractConstraintError(
   )
     return undefined;
   return { code, constraint, detail };
+}
+
+export function isConstraintError(
+  error: unknown,
+  code?: PgErrorCode,
+  constraint?: string,
+): boolean {
+  const driverError = extractConstraintError(error);
+  if (!driverError) return false;
+  return (
+    (!code || driverError.code === code) &&
+    (!constraint || driverError.constraint === constraint)
+  );
 }
