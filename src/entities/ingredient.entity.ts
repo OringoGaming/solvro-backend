@@ -4,7 +4,7 @@ import {
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
-  Unique
+  Unique,
 } from 'typeorm';
 import type { CocktailIngredient } from './cocktailIngredient.entity.js';
 import type { IngredientImage } from './ingredientImage.entity.js';
@@ -31,8 +31,6 @@ export class Ingredient {
   )
   cocktailIngredients: CocktailIngredient[];
 
-  @OneToOne('IngredientImage', (image: IngredientImage) => image.ingredient, {
-    cascade: true,
-  })
+  @OneToOne('IngredientImage', (image: IngredientImage) => image.ingredient)
   image: IngredientImage | null;
 }

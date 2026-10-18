@@ -1,11 +1,5 @@
-import {
-  Column,
-  Entity,
-  OneToMany,
-  PrimaryGeneratedColumn
-} from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import type { Cocktail } from './cocktail.entity.js';
-
 
 export enum UserRole {
   USER = 'user',

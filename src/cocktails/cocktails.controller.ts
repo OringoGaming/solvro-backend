@@ -1,52 +1,132 @@
+import { CurrentUser, Public } from '@nestjs/authentication';
+import { Can } from '@nestjs/authorization';
 import {
   Body,
   Controller,
-  DefaultValuePipe,
   Delete,
   Get,
   HttpCode,
   HttpStatus,
   NotFoundException,
   Param,
-  ParseIntPipe,
-  ParseUUIDPipe,
   Patch,
   Post,
   Query,
   SerializeOptions,
 } from '@nestjs/common';
-import { CocktailsService } from './cocktails.service.js';
+import {
+  ApiBearerAuth,
+  ApiConflictResponse,
+  ApiCreatedResponse,
+  ApiForbiddenResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiUnprocessableEntityResponse,
+} from '@nestjs/swagger';
+import z from 'zod';
 import { Cocktail } from '../entities/cocktail.entity.js';
-import { createCocktailSchema } from './dto/createCocktail.dto.js';
-import type { CreateCocktailDto } from './dto/createCocktail.dto.js';
-import { updateCocktailSchema } from './dto/updateCocktail.dto.js';
-import type { UpdateCocktailDto } from './dto/updateCocktail.dto.js';
+import { User } from '../entities/user.entity.js';
+import type { PaginationDto } from '../shared/dto/pagination.dto.js';
+import { paginationSchema } from '../shared/dto/pagination.dto.js';
+import { param } from '../shared/utils/param.js';
+import { CocktailsPolicy } from './cocktails.policy.js';
+import { CocktailInput, CocktailsService } from './cocktails.service.js';
 import {
   CocktailResponseDto,
   cocktailResponseSchema,
-  cocktailToDto,
 } from './dto/cocktailResponse.dto.js';
-import z from 'zod';
+import {
+  CocktailsFilterDto,
+  cocktailsFilterSchema,
+} from './dto/cocktailsFilter.dto.js';
 import {
   CocktailsPageDto,
   cocktailsPageSchema,
 } from './dto/cocktailsPage.dto.js';
-import { paginationSchema } from '../shared/pagination.dto.js';
-import type { PaginationDto } from '../shared/pagination.dto.js';
+import {
+  createCocktailSchema,
+  type CreateCocktailDto,
+} from './dto/createCocktail.dto.js';
+import {
+  updateCocktailSchema,
+  type UpdateCocktailDto,
+} from './dto/updateCocktail.dto.js';
+
+function dtoToCocktailInput(
+  dto: UpdateCocktailDto | CreateCocktailDto,
+): CocktailInput {
+  return {
+    name: dto.name,
+    instruction: dto.instruction,
+    categoryId: dto.categoryId,
+    cocktailIngredients: dto.ingredients?.map((ingredient) => {
+      return {
+        ingredientId: ingredient.id,
+        unit: ingredient.unit,
+        amount: ingredient.amount.toString(),
+      };
+    }),
+  };
+}
+
+function cocktailToDto(cocktail: Cocktail): CocktailResponseDto {
+  return {
+    id: cocktail.id,
+    name: cocktail.name,
+    instruction: cocktail.instruction,
+    category: cocktail.category,
+    ingredients: cocktail.cocktailIngredients.map((ci) => {
+      return {
+        id: ci.ingredientId,
+        name: ci.ingredient.name,
+        alcoholic: ci.ingredient.alcoholic,
+        description: ci.ingredient.description,
+        unit: ci.unit,
+        amount: parseFloat(ci.amount),
+      };
+    }),
+    user: {
+      id: cocktail.userId,
+      email: cocktail.user.email,
+    },
+  };
+}
 
 @Controller('cocktails')
 export class CocktailsController {
   constructor(private readonly cocktailsService: CocktailsService) {}
 
   @Get()
+  @Public()
   @SerializeOptions({ schema: cocktailsPageSchema })
+  @ApiOperation({
+    summary:
+      'Returns a page of cocktails and the amount of pages filtered and sorted by the specified options.',
+  })
+  @ApiOkResponse({ summary: 'The page', standardSchema: cocktailsPageSchema })
   async page(
-    @Query({ schema: paginationSchema }) { pageSize, page }: PaginationDto,
-  ): Promise<CocktailsPageDto> {
-    const cocktailPage = await this.cocktailsService.findPaginated(
+    @Query({ schema: z.intersection(paginationSchema, cocktailsFilterSchema) })
+    {
       pageSize,
-      page * pageSize,
-    );
+      page,
+      name,
+      alcoholic,
+      ingredientIds,
+      userId,
+      instruction,
+    }: PaginationDto & CocktailsFilterDto,
+  ): Promise<CocktailsPageDto> {
+    const cocktailPage = await this.cocktailsService.findPaginated({
+      take: pageSize,
+      skip: page * pageSize,
+      userId,
+      ingredientIds,
+      name,
+      alcoholic,
+      instruction,
+    });
 
     return {
       cocktails: cocktailPage.cocktails.map(cocktailToDto),
@@ -56,52 +136,91 @@ export class CocktailsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @Can(CocktailsPolicy, 'create')
   @SerializeOptions({ schema: cocktailResponseSchema })
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Creates a new cocktail.' })
+  @ApiCreatedResponse({
+    summary: 'The cocktail was created.',
+    standardSchema: cocktailResponseSchema,
+  })
+  @ApiUnprocessableEntityResponse({
+    summary:
+      'If the category does not exist or one of the ingredients does not exist.',
+  })
+  @ApiConflictResponse({ summary: 'If the cocktail name is taken.' })
   async create(
+    @CurrentUser() user: User,
     @Body({ schema: createCocktailSchema })
     body: CreateCocktailDto,
   ): Promise<CocktailResponseDto> {
-    const cocktail = {
-      name: body.name,
-      instruction: body.instruction,
-      categoryId: body.categoryId,
-      cocktailIngredients: body.ingredients.map((ingredient) => {
-        return {
-          ingredientId: ingredient.id,
-          unit: ingredient.unit,
-          amount: ingredient.amount.toString(),
-        };
-      }),
-    };
-    return cocktailToDto(await this.cocktailsService.create(cocktail));
+    return cocktailToDto(
+      await this.cocktailsService.create(dtoToCocktailInput(body), user),
+    );
   }
 
+  @Public()
   @Get(':id')
   @SerializeOptions({ schema: cocktailResponseSchema })
+  @ApiOperation({ summary: 'Returns a cocktail with the id.' })
+  @ApiOkResponse({
+    summary: 'The cocktail.',
+    standardSchema: cocktailResponseSchema,
+  })
+  @ApiNotFoundResponse({ summary: 'If there is no cocktail with the id.' })
   async get(
     @Param('id', { schema: z.uuid() }) id: string,
   ): Promise<CocktailResponseDto> {
     const res = await this.cocktailsService.find(id);
-    if (res == null) throw new NotFoundException('Cocktail not found.');
+    if (res === null) throw new NotFoundException('Cocktail not found.');
 
     return cocktailToDto(res);
   }
 
+  @HttpCode(HttpStatus.OK)
   @Patch(':id')
+  //TODO: check in the service, so we can throw not found.
+  @Can(CocktailsPolicy, 'edit', param('id'))
   @SerializeOptions({ schema: cocktailResponseSchema })
+  @ApiOperation({ summary: 'Updates a cocktail with the id.' })
+  @ApiNotFoundResponse({ summary: 'If there is no cocktail with the id.' })
+  @ApiOkResponse({
+    summary: 'The cocktail has been updated.',
+    standardSchema: cocktailResponseSchema,
+  })
+  @ApiForbiddenResponse({
+    summary: "If the user is not an admin or isn't an owner of the cocktail.",
+  })
+  @ApiBearerAuth()
+  @ApiUnprocessableEntityResponse({
+    summary:
+      'If the category does not exist or one of the ingredients does not exist.',
+  })
+  @ApiConflictResponse({ summary: 'If the cocktail name is taken.' })
   async update(
     @Param('id', { schema: z.uuid() }) id: string,
     @Body({ schema: updateCocktailSchema })
     body: UpdateCocktailDto,
   ): Promise<CocktailResponseDto> {
-    const result = await this.cocktailsService.update(id, body);
-    if (!result) throw new NotFoundException('Cocktail not found.');
+    const result = await this.cocktailsService.update(
+      id,
+      dtoToCocktailInput(body),
+    );
+    if (result === null) throw new NotFoundException('Cocktail not found.');
 
     return cocktailToDto(result);
   }
 
+  @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
-  async delete(@Param('id', ParseUUIDPipe) id: string) {
+  @Can(CocktailsPolicy, 'edit', param('id'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Deletes a cocktail with the id.' })
+  @ApiNotFoundResponse({ summary: 'If the cocktail does not exist.' })
+  @ApiNoContentResponse({
+    summary: 'If the cocktail was deleted successfully.',
+  })
+  async delete(@Param('id', { schema: z.uuid() }) id: string) {
     if (!(await this.cocktailsService.remove(id)))
       throw new NotFoundException('Cocktail not found.');
   }

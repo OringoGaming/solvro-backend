@@ -10,17 +10,17 @@ import {
   FK_INGREDIENT_IMAGE,
   IngredientImage,
 } from '../entities/ingredientImage.entity.js';
-import {
-  isConstraintError,
-  PgErrorCode
-} from '../shared/utils/dbErrors.js';
+import { isConstraintError, PgErrorCode } from '../shared/utils/dbErrors.js';
 
-export type IngredientsPage = { ingredients: Ingredient[]; total: number };
+export interface IngredientsPage {
+  ingredients: Ingredient[];
+  total: number;
+}
 export type IngredientInput = Partial<
   Omit<Ingredient, 'id' | 'cocktailIngredients' | 'image'>
 >;
 
-export type IngredientsFilter = {
+export interface IngredientsFilter {
   take: number;
   skip: number;
   name?: string;
@@ -28,7 +28,7 @@ export type IngredientsFilter = {
   alcoholic?: boolean;
   sort?: ('name' | 'alcoholic')[];
   sortDir?: 'ASC' | 'DESC';
-};
+}
 
 export type ImageInput = Omit<
   IngredientImage,
@@ -117,7 +117,13 @@ export class IngredientsService {
       const res = await this.entityManager.delete(Ingredient, { id });
       return res.affected !== 0;
     } catch (e) {
-      if (!isConstraintError(e, PgErrorCode.RESTRICT_VIOLATION, COCKTAIL_INGREDIENT_INGREDIENT_FK))
+      if (
+        !isConstraintError(
+          e,
+          PgErrorCode.RESTRICT_VIOLATION,
+          COCKTAIL_INGREDIENT_INGREDIENT_FK,
+        )
+      )
         throw e;
       throw new ConflictException('The ingredient is still in use.');
     }
@@ -137,9 +143,14 @@ export class IngredientsService {
     ingredient: IngredientInput,
   ): Promise<Ingredient | null> {
     try {
-      const res = await this.entityManager.update(Ingredient, { id }, ingredient, {
-        returning: '*',
-      });
+      const res = await this.entityManager.update(
+        Ingredient,
+        { id },
+        ingredient,
+        {
+          returning: '*',
+        },
+      );
       if (!res.affected) return null;
 
       // less db round trips

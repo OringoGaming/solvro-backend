@@ -2,7 +2,6 @@ import z from 'zod';
 import { IngredientUnit } from '../../entities/cocktailIngredient.entity.js';
 import { ingredientResponseSchema } from '../../ingredients/dto/ingredientResponse.dto.js';
 import { cocktailCategoryResponseSchema } from './cocktailCategoryResponse.dto.js';
-import { Cocktail } from '../../entities/cocktail.entity.js';
 
 export const cocktailResponseSchema = z.object({
   id: z.uuid(),
@@ -15,22 +14,10 @@ export const cocktailResponseSchema = z.object({
       amount: z.coerce.number().positive(),
     }),
   ),
+  user: z.object({
+    id: z.uuid(),
+    email: z.email(),
+  }),
 });
 
 export type CocktailResponseDto = z.infer<typeof cocktailResponseSchema>;
-
-export function cocktailToDto(cocktail: Cocktail): CocktailResponseDto {
-  return {
-    id: cocktail.id,
-    name: cocktail.name,
-    instruction: cocktail.instruction,
-    category: cocktail.category,
-    ingredients: cocktail.cocktailIngredients.map((ci) => {
-      return {
-        ...ci.ingredient,
-        unit: ci.unit,
-        amount: parseFloat(ci.amount),
-      };
-    }),
-  };
-}

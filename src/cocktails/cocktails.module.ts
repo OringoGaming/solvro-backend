@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { CocktailsService } from './cocktails.service.js';
 import { CocktailsController } from './cocktails.controller.js';
+import { CocktailsPolicy } from './cocktails.policy.js';
+import { CocktailsService } from './cocktails.service.js';
 
 @Module({
   controllers: [CocktailsController],
-  providers: [CocktailsService],
+  providers: [CocktailsService, CocktailsPolicy],
 })
 export class CocktailsModule {}

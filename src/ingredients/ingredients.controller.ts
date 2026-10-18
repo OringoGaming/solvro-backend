@@ -17,7 +17,7 @@ import {
   SerializeOptions,
   StreamableFile,
   UploadedFile,
-  UseInterceptors
+  UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -31,8 +31,9 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiPayloadTooLargeResponse,
   ApiTags,
-  ApiUnprocessableEntityResponse
+  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import z from 'zod';
 import {
@@ -56,9 +57,7 @@ import {
 import type { UpdateIngredientDto } from './dto/updateIngredient.dto.js';
 import { updateIngredientSchema } from './dto/updateIngredient.dto.js';
 import { IngredientsPolicy } from './ingredients.policy.js';
-import {
-  IngredientsService
-} from './ingredients.service.js';
+import { IngredientsService } from './ingredients.service.js';
 
 @ApiTags('ingredients')
 @Controller('ingredients')
@@ -147,6 +146,7 @@ export class IngredientsController {
 
   @Patch(':id')
   @Can(IngredientsPolicy, 'edit')
+  @HttpCode(HttpStatus.OK)
   @SerializeOptions({ schema: ingredientResponseSchema })
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Updates an ingredient' })
@@ -194,7 +194,9 @@ export class IngredientsController {
   @ApiConsumes('multipart/form-data')
   @Can(IngredientsPolicy, 'edit')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: 2 * 1024 * 1024 } }),
+  )
   @ApiNoContentResponse({ description: 'The image was saved.' })
   @ApiBody({
     description: 'An image of the ingredient.',
@@ -209,15 +211,16 @@ export class IngredientsController {
   @ApiOperation({ summary: 'Uploads an ingredient image.' })
   @ApiNotFoundResponse({ description: 'If the ingredient is not found.' })
   @ApiUnprocessableEntityResponse({
-    description:
-      'If the file is neither a png nor a jpeg or is over 2mb in size.',
+    description: 'If the file is neither a png nor a jpeg',
+  })
+  @ApiPayloadTooLargeResponse({
+    description: 'If the file is over 2mb in size.',
   })
   async upload(
     @Param('id', { schema: z.uuid() }) id: string,
     @UploadedFile(
       new ParseFilePipeBuilder()
         .addFileTypeValidator({ fileType: /^image\/(png|jpeg)$/ })
-        .addMaxSizeValidator({ maxSize: 2 * 1024 * 1024 })
         .build({ errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY }),
     )
     file: Express.Multer.File,

@@ -1,9 +1,10 @@
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
-  PrimaryColumn
+  PrimaryColumn,
 } from 'typeorm';
 import type { Cocktail } from './cocktail.entity.js';
 import type { Ingredient } from './ingredient.entity.js';
@@ -23,6 +24,7 @@ export const COCKTAIL_INGREDIENT_INGREDIENT_FK =
 export class CocktailIngredient {
   @PrimaryColumn('uuid', { primaryKeyConstraintName: COCKTAIL_INGREDIENT_PK })
   cocktailId: string;
+  @Index()
   @PrimaryColumn('uuid', { primaryKeyConstraintName: COCKTAIL_INGREDIENT_PK })
   ingredientId: string;
 

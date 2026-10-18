@@ -22,12 +22,13 @@ export class UsersService {
   }
 
   async findForLogin(email: string, password: string): Promise<User | null> {
-    const user = await this.entityManager.createQueryBuilder(User, 'user')
-      .addSelect('passwordHash')
-      .where("user.email = :email", { email })
+    const user = await this.entityManager
+      .createQueryBuilder(User, 'user')
+      .addSelect('user.passwordHash')
+      .where('user.email = :email', { email })
       .getOne();
     //pass null to prevent timing attacks
-    if (!await this.passwordHasher.verify(password, user?.passwordHash))
+    if (!(await this.passwordHasher.verify(password, user?.passwordHash)))
       return null;
     delete user!.passwordHash;
     return user;

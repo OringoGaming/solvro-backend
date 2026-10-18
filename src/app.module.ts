@@ -1,4 +1,5 @@
 import { AuthenticationModule } from '@nestjs/authentication';
+import { AuthorizationModule } from '@nestjs/authorization';
 import {
   Module,
   StandardSchemaSerializerInterceptor,
@@ -8,6 +9,7 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module.js';
+import { CocktailsModule } from './cocktails/cocktails.module.js';
 import { Cocktail } from './entities/cocktail.entity.js';
 import { CocktailCategory } from './entities/cocktailCategory.entity.js';
 import { CocktailIngredient } from './entities/cocktailIngredient.entity.js';
@@ -37,6 +39,7 @@ import { SeedModule } from './seed/seed.module.js';
         ttl: '15m',
       },
     }),
+    AuthorizationModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST,
@@ -55,7 +58,7 @@ import { SeedModule } from './seed/seed.module.js';
       synchronize: false,
     }),
     AuthModule,
-    //CocktailsModule,
+    CocktailsModule,
     IngredientsModule,
     SeedModule,
   ],
