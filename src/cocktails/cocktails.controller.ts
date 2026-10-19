@@ -30,7 +30,6 @@ import { Cocktail } from '../entities/cocktail.entity.js';
 import { User } from '../entities/user.entity.js';
 import type { PaginationDto } from '../shared/dto/pagination.dto.js';
 import { paginationSchema } from '../shared/dto/pagination.dto.js';
-import { param } from '../shared/utils/param.js';
 import { CocktailsPolicy } from './cocktails.policy.js';
 import { CocktailInput, CocktailsService } from './cocktails.service.js';
 import {
@@ -116,6 +115,9 @@ export class CocktailsController {
       ingredientIds,
       userId,
       instruction,
+      categoryIds,
+      sort,
+      sortDir
     }: PaginationDto & CocktailsFilterDto,
   ): Promise<CocktailsPageDto> {
     const cocktailPage = await this.cocktailsService.findPaginated({
@@ -126,6 +128,9 @@ export class CocktailsController {
       name,
       alcoholic,
       instruction,
+      categoryIds,
+      sort,
+      sortDir
     });
 
     return {
@@ -179,8 +184,8 @@ export class CocktailsController {
 
   @HttpCode(HttpStatus.OK)
   @Patch(':id')
-  //TODO: check in the service, so we can throw not found.
-  @Can(CocktailsPolicy, 'edit', param('id'))
+  //Checked in cocktailService
+  @Can.Anyone() 
   @SerializeOptions({ schema: cocktailResponseSchema })
   @ApiOperation({ summary: 'Updates a cocktail with the id.' })
   @ApiNotFoundResponse({ summary: 'If there is no cocktail with the id.' })
@@ -201,10 +206,12 @@ export class CocktailsController {
     @Param('id', { schema: z.uuid() }) id: string,
     @Body({ schema: updateCocktailSchema })
     body: UpdateCocktailDto,
+    @CurrentUser() user: User | null
   ): Promise<CocktailResponseDto> {
     const result = await this.cocktailsService.update(
       id,
       dtoToCocktailInput(body),
+      user,
     );
     if (result === null) throw new NotFoundException('Cocktail not found.');
 
@@ -213,15 +220,17 @@ export class CocktailsController {
 
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
-  @Can(CocktailsPolicy, 'edit', param('id'))
+  //checked in cocktails service.
+  @Can.Anyone()
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Deletes a cocktail with the id.' })
   @ApiNotFoundResponse({ summary: 'If the cocktail does not exist.' })
   @ApiNoContentResponse({
     summary: 'If the cocktail was deleted successfully.',
   })
-  async delete(@Param('id', { schema: z.uuid() }) id: string) {
-    if (!(await this.cocktailsService.remove(id)))
+  async delete(@Param('id', { schema: z.uuid() }) id: string,
+    @CurrentUser() user: User | null) {
+    if (!(await this.cocktailsService.remove(id, user)))
       throw new NotFoundException('Cocktail not found.');
   }
 }

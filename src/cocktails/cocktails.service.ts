@@ -1,7 +1,8 @@
+import { AuthorizationService } from '@nestjs/authorization';
 import {
   ConflictException,
   Injectable,
-  UnprocessableEntityException,
+  UnprocessableEntityException
 } from '@nestjs/common';
 import { DeepPartial, EntityManager } from 'typeorm';
 import {
@@ -19,6 +20,7 @@ import {
   extractConstraintError,
   PgErrorCode,
 } from '../shared/utils/dbErrors.js';
+import { CocktailsPolicy } from './cocktails.policy.js';
 
 const cocktailRelations = {
   category: true,
@@ -27,6 +29,20 @@ const cocktailRelations = {
   },
   user: true,
 };
+
+function assertSort(sort?: string) {
+  if (sort !== undefined && sort !== 'name' && sort !== 'categoryName')
+    throw new Error(
+      `Sort must be 'name', 'categoryName' or undefined. Is ${sort}.`,
+    );
+}
+
+function assertSortDir(sortDir?: string) {
+  if (sortDir !== undefined && sortDir !== 'ASC' && sortDir !== 'DESC')
+    throw new Error(
+      `Sort direction must be 'ASC', 'DESC' or undefined. Is ${sortDir}.`,
+    );
+}
 
 function rethrowCocktailSaveError(e: unknown): unknown {
   const driverError = extractConstraintError(e);
@@ -64,14 +80,19 @@ export interface CocktailsFilter {
   skip: number;
   name?: string;
   instruction?: string;
+  categoryIds?: number[];
   ingredientIds?: string[];
   userId?: string;
   alcoholic?: boolean;
+  sort?: ('name' | 'categoryName')[];
+  sortDir?: 'ASC' | 'DESC';
 }
 
 @Injectable()
 export class CocktailsService {
-  constructor(private readonly entityManager: EntityManager) {}
+  constructor(private readonly entityManager: EntityManager,
+    private readonly authService: AuthorizationService
+  ) {}
 
   find(id: string): Promise<Cocktail | null> {
     return this.entityManager.findOne(Cocktail, {
@@ -88,6 +109,9 @@ export class CocktailsService {
     ingredientIds,
     userId,
     alcoholic,
+    categoryIds,
+    sort,
+    sortDir,
   }: CocktailsFilter): Promise<CocktailsPage> {
     const query = this.entityManager
       .createQueryBuilder(Cocktail, 'cocktail')
@@ -96,9 +120,7 @@ export class CocktailsService {
       .leftJoinAndSelect('cocktail.cocktailIngredients', 'cocktailIngredient')
       .leftJoinAndSelect('cocktailIngredient.ingredient', 'ingredient')
       .take(take)
-      .skip(skip)
-      .addOrderBy('cocktail.name')
-      .addOrderBy('cocktail.id');
+      .skip(skip);
 
     if (name) {
       query.andWhere("cocktail.name ILIKE '%' || :name || '%'", {
@@ -124,6 +146,11 @@ export class CocktailsService {
             .getQuery(),
       );
     }
+    if (categoryIds?.length) {
+      query.andWhere('cocktail.categoryId IN (:...categoryIds)', {
+        categoryIds,
+      });
+    }
 
     if (alcoholic !== undefined) {
       query.andWhere(
@@ -144,12 +171,30 @@ export class CocktailsService {
       query.andWhere('cocktail.userId = :userId', { userId });
     }
 
+    assertSortDir(sortDir);
+    sort?.forEach((v) => {
+      assertSort(v);
+      query.addOrderBy(
+        v === 'name' ? 'cocktail.name' : 'category.name',
+        sortDir,
+      );
+    });
+
+    query.addOrderBy('cocktail.id', sortDir);
+
     const res = await query.getManyAndCount();
 
     return { cocktails: res[0], total: res[1] };
   }
 
-  async remove(id: string): Promise<boolean> {
+  async remove(id: string, user: User | null): Promise<boolean> {
+    const inDb = await this.entityManager.findOne(Cocktail, {
+      where: { id },
+    });
+    if (inDb === null) return false;
+
+    await this.authService.authorize(CocktailsPolicy, 'edit', user, inDb)
+
     const res = await this.entityManager.delete(Cocktail, {
       id,
     });
@@ -175,24 +220,20 @@ export class CocktailsService {
     }
   }
 
-  async update(id: string, input: CocktailInput): Promise<Cocktail | null> {
-    let result;
+  async update(id: string, input: CocktailInput, user: User | null): Promise<Cocktail | null> {
+    const inDb = await this.entityManager.findOne(Cocktail, {
+      where: { id },
+    });
+    if (inDb === null) return null;
+
+    await this.authService.authorize(CocktailsPolicy, 'edit', user, inDb)
+
     try {
-      result = await this.entityManager.transaction(async (mgr) => {
-        //save handles cascade here.
-        const inDb = await mgr.findOne(Cocktail, {
-          where: { id },
-          lock: { mode: 'pessimistic_write' },
-        });
-        if (inDb === null) return null;
-        await mgr.save(Cocktail, { id, ...input });
-      });
+      await this.entityManager.save(Cocktail, { id, ...input });
     } catch (e) {
       throw rethrowCocktailSaveError(e);
     }
-    if (result === null) return null;
     //We want the relations.
-    //Race condition doesn't matter
     return await this.entityManager.findOne(Cocktail, {
       where: { id },
       relations: cocktailRelations,
