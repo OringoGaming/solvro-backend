@@ -11,6 +11,7 @@ import {
   FK_COCKTAIL_USER,
   UQ_COCKTAIL_NAME,
 } from '../entities/cocktail.entity.js';
+import { CocktailCategory } from '../entities/cocktailCategory.entity.js';
 import {
   COCKTAIL_INGREDIENT_INGREDIENT_FK,
   CocktailIngredient,
@@ -69,6 +70,8 @@ function rethrowCocktailSaveError(e: unknown): unknown {
 export type CocktailInput = DeepPartial<
   Omit<Cocktail, 'id' | 'cocktailCategory' | 'user' | 'userId'>
 >;
+
+export type CocktailCategoryInput = Omit<CocktailCategory, 'id' | 'cocktails'>;
 
 export interface CocktailsPage {
   total: number;
@@ -221,22 +224,23 @@ export class CocktailsService {
   }
 
   async update(id: string, input: CocktailInput, user: User | null): Promise<Cocktail | null> {
-    const inDb = await this.entityManager.findOne(Cocktail, {
-      where: { id },
-    });
-    if (inDb === null) return null;
+    return await this.entityManager.transaction(async (mgr) => {
+      //save handles cascade here.
+      const inDb = await mgr.findOne(Cocktail, {
+        where: { id },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (inDb === null)
+        return null;
+      await this.authService.authorize(CocktailsPolicy, 'edit', user, inDb);
 
-    await this.authService.authorize(CocktailsPolicy, 'edit', user, inDb)
+      try {
+        await mgr.save(Cocktail, { id, ...input });
+      } catch (e) {
+        throw rethrowCocktailSaveError(e);
+      }
 
-    try {
-      await this.entityManager.save(Cocktail, { id, ...input });
-    } catch (e) {
-      throw rethrowCocktailSaveError(e);
-    }
-    //We want the relations.
-    return await this.entityManager.findOne(Cocktail, {
-      where: { id },
-      relations: cocktailRelations,
+      return await mgr.findOneOrFail(Cocktail, { where: { id }, relations: cocktailRelations })
     });
   }
 }
