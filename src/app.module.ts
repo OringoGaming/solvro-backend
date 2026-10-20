@@ -9,6 +9,7 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module.js';
+import { CategoriesModule } from './categories/categories.module.js';
 import { CocktailsModule } from './cocktails/cocktails.module.js';
 import { Cocktail } from './entities/cocktail.entity.js';
 import { CocktailCategory } from './entities/cocktailCategory.entity.js';
@@ -61,6 +62,7 @@ import { SeedModule } from './seed/seed.module.js';
     CocktailsModule,
     IngredientsModule,
     SeedModule,
+    CategoriesModule,
   ],
 })
 export class AppModule {}

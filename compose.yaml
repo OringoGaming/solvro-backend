@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: 'postgres:latest' # postgres ma własny healthcheck
+    image: 'postgres:latest'
     ports:
       - '${DB_PORT}:${DB_PORT}'
     environment:

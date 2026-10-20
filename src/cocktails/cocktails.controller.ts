@@ -117,7 +117,7 @@ export class CocktailsController {
       instruction,
       categoryIds,
       sort,
-      sortDir
+      sortDir,
     }: PaginationDto & CocktailsFilterDto,
   ): Promise<CocktailsPageDto> {
     const cocktailPage = await this.cocktailsService.findPaginated({
@@ -130,7 +130,7 @@ export class CocktailsController {
       instruction,
       categoryIds,
       sort,
-      sortDir
+      sortDir,
     });
 
     return {
@@ -185,7 +185,7 @@ export class CocktailsController {
   @HttpCode(HttpStatus.OK)
   @Patch(':id')
   //Checked in cocktailService
-  @Can.Anyone() 
+  @Can.Anyone()
   @SerializeOptions({ schema: cocktailResponseSchema })
   @ApiOperation({ summary: 'Updates a cocktail with the id.' })
   @ApiNotFoundResponse({ summary: 'If there is no cocktail with the id.' })
@@ -202,11 +202,12 @@ export class CocktailsController {
       'If the category does not exist or one of the ingredients does not exist.',
   })
   @ApiConflictResponse({ summary: 'If the cocktail name is taken.' })
+  @ApiForbiddenResponse({ description: "If the logged in user is not an admin or not the owner of the cocktail."})
   async update(
     @Param('id', { schema: z.uuid() }) id: string,
     @Body({ schema: updateCocktailSchema })
     body: UpdateCocktailDto,
-    @CurrentUser() user: User | null
+    @CurrentUser() user: User | null,
   ): Promise<CocktailResponseDto> {
     const result = await this.cocktailsService.update(
       id,
@@ -224,12 +225,15 @@ export class CocktailsController {
   @Can.Anyone()
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Deletes a cocktail with the id.' })
-  @ApiNotFoundResponse({ summary: 'If the cocktail does not exist.' })
+  @ApiNotFoundResponse({ description: 'If the cocktail does not exist.' })
   @ApiNoContentResponse({
-    summary: 'If the cocktail was deleted successfully.',
+    description: 'If the cocktail was deleted successfully.',
   })
-  async delete(@Param('id', { schema: z.uuid() }) id: string,
-    @CurrentUser() user: User | null) {
+  @ApiForbiddenResponse({ description: "If the logged in user is not an admin or not the owner of the cocktail."})
+  async delete(
+    @Param('id', { schema: z.uuid() }) id: string,
+    @CurrentUser() user: User | null,
+  ) {
     if (!(await this.cocktailsService.remove(id, user)))
       throw new NotFoundException('Cocktail not found.');
   }

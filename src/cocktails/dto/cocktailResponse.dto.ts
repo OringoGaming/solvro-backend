@@ -1,7 +1,7 @@
 import z from 'zod';
+import { cocktailCategoryResponseSchema } from '../../categories/dto/cocktailCategoryResponse.dto.js';
 import { IngredientUnit } from '../../entities/cocktailIngredient.entity.js';
 import { ingredientResponseSchema } from '../../ingredients/dto/ingredientResponse.dto.js';
-import { cocktailCategoryResponseSchema } from './cocktailCategoryResponse.dto.js';
 
 export const cocktailResponseSchema = z.object({
   id: z.uuid(),

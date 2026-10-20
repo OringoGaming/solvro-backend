@@ -59,7 +59,6 @@ import { updateIngredientSchema } from './dto/updateIngredient.dto.js';
 import { IngredientsPolicy } from './ingredients.policy.js';
 import { IngredientsService } from './ingredients.service.js';
 
-@ApiTags('ingredients')
 @Controller('ingredients')
 export class IngredientsController {
   constructor(private readonly ingredientsService: IngredientsService) {}
