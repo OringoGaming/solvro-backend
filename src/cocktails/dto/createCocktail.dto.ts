@@ -11,7 +11,7 @@ export const createCocktailSchema = z.strictObject({
       z.object({
         id: z.uuid(),
         unit: z.enum(IngredientUnit),
-        amount: z.number().positive(),
+        amount: z.number().positive().max(999).multipleOf(0.01)
       }),
     )
     .max(MAX_COCKTAIL_INGREDIENTS)
