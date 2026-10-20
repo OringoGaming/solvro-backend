@@ -3,16 +3,13 @@ import {
   Entity,
   JoinColumn,
   OneToOne,
-  PrimaryGeneratedColumn,
-  Unique,
+  PrimaryGeneratedColumn
 } from 'typeorm';
 import { Ingredient } from './ingredient.entity.js';
 
 export const FK_INGREDIENT_IMAGE = 'FK_INGREDIENT_IMAGE';
-export const UQ_INGREDIENT_IMAGE = 'REL_INGREDIENT_IMAGE';
 
 @Entity()
-@Unique(UQ_INGREDIENT_IMAGE, ['ingredientId'])
 export class IngredientImage {
   @PrimaryGeneratedColumn('uuid')
   id: string;

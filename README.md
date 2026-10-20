@@ -15,6 +15,7 @@ You can run the database container with:
 $ docker compose up -d
 ```
 
+Apply migrations with
 ```bash
 $ npm run migration:run
 ```

@@ -1,10 +1,9 @@
 import {
   Column,
   Entity,
-  Index,
   JoinColumn,
   ManyToOne,
-  PrimaryColumn,
+  PrimaryColumn
 } from 'typeorm';
 import type { Cocktail } from './cocktail.entity.js';
 import type { Ingredient } from './ingredient.entity.js';
@@ -24,7 +23,6 @@ export const COCKTAIL_INGREDIENT_INGREDIENT_FK =
 export class CocktailIngredient {
   @PrimaryColumn('uuid', { primaryKeyConstraintName: COCKTAIL_INGREDIENT_PK })
   cocktailId: string;
-  @Index()
   @PrimaryColumn('uuid', { primaryKeyConstraintName: COCKTAIL_INGREDIENT_PK })
   ingredientId: string;
 
@@ -56,7 +54,8 @@ export class CocktailIngredient {
 
   @Column({
     type: 'decimal',
-    precision: 2,
+    precision: 6,
+    scale: 2
   })
-  amount: string; // typeorm maps decimal to string.
+  amount: string;
 }
