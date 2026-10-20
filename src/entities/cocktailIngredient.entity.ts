@@ -1,10 +1,4 @@
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  PrimaryColumn
-} from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 import type { Cocktail } from './cocktail.entity.js';
 import type { Ingredient } from './ingredient.entity.js';
 
@@ -55,7 +49,7 @@ export class CocktailIngredient {
   @Column({
     type: 'decimal',
     precision: 6,
-    scale: 2
+    scale: 2,
   })
   amount: string;
 }

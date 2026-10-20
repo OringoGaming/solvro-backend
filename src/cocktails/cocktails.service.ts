@@ -11,9 +11,7 @@ import {
   FK_COCKTAIL_USER,
   UQ_COCKTAIL_NAME,
 } from '../entities/cocktail.entity.js';
-import {
-  CocktailCategory,
-} from '../entities/cocktailCategory.entity.js';
+import { CocktailCategory } from '../entities/cocktailCategory.entity.js';
 import {
   COCKTAIL_INGREDIENT_INGREDIENT_FK,
   CocktailIngredient,
@@ -72,7 +70,6 @@ function rethrowCocktailSaveError(e: unknown): unknown {
 export type CocktailInput = DeepPartial<
   Omit<Cocktail, 'id' | 'cocktailCategory' | 'user' | 'userId'>
 >;
-
 
 export interface CocktailsPage {
   total: number;

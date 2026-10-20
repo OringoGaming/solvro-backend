@@ -11,7 +11,7 @@ import {
   Param,
   Patch,
   Post,
-  SerializeOptions
+  SerializeOptions,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -27,11 +27,13 @@ import { CategoriesPolicy } from './categories.policy.js';
 import { CategoriesService } from './categories.service.js';
 import type { CocktailCategoryResposeDto } from './dto/cocktailCategoryResponse.dto.js';
 import { cocktailCategoryResponseSchema } from './dto/cocktailCategoryResponse.dto.js';
-import { createCocktailCategorySchema, type CreateCocktailCategoryDto } from './dto/createCocktailCategory.dto.js';
+import {
+  createCocktailCategorySchema,
+  type CreateCocktailCategoryDto,
+} from './dto/createCocktailCategory.dto.js';
 
 @Controller('category')
 export class CategoriesController {
-
   constructor(private readonly categoryService: CategoriesService) {}
 
   @Post()
@@ -59,8 +61,8 @@ export class CategoriesController {
   @HttpCode(HttpStatus.OK)
   @SerializeOptions({ schema: cocktailCategoryResponseSchema })
   @Public()
-  @ApiOperation({summary: 'Gets all categories.'})
-  @ApiOkResponse({description: 'All exisitng categories.'})
+  @ApiOperation({ summary: 'Gets all categories.' })
+  @ApiOkResponse({ description: 'All exisitng categories.' })
   async categories(): Promise<CocktailCategoryResposeDto[]> {
     return await this.categoryService.findCategories();
   }

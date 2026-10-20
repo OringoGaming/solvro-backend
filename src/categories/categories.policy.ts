@@ -1,5 +1,5 @@
-import { Policy } from "@nestjs/authorization";
-import { User, UserRole } from "../entities/user.entity.js";
+import { Policy } from '@nestjs/authorization';
+import { User, UserRole } from '../entities/user.entity.js';
 
 @Policy()
 export class CategoriesPolicy {

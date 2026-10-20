@@ -202,7 +202,10 @@ export class CocktailsController {
       'If the category does not exist or one of the ingredients does not exist.',
   })
   @ApiConflictResponse({ summary: 'If the cocktail name is taken.' })
-  @ApiForbiddenResponse({ description: "If the logged in user is not an admin or not the owner of the cocktail."})
+  @ApiForbiddenResponse({
+    description:
+      'If the logged in user is not an admin or not the owner of the cocktail.',
+  })
   async update(
     @Param('id', { schema: z.uuid() }) id: string,
     @Body({ schema: updateCocktailSchema })
@@ -229,7 +232,10 @@ export class CocktailsController {
   @ApiNoContentResponse({
     description: 'If the cocktail was deleted successfully.',
   })
-  @ApiForbiddenResponse({ description: "If the logged in user is not an admin or not the owner of the cocktail."})
+  @ApiForbiddenResponse({
+    description:
+      'If the logged in user is not an admin or not the owner of the cocktail.',
+  })
   async delete(
     @Param('id', { schema: z.uuid() }) id: string,
     @CurrentUser() user: User | null,

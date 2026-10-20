@@ -1,10 +1,15 @@
-import { ConflictException, Injectable } from "@nestjs/common";
-import { EntityManager } from "typeorm";
-import { FK_COCKTAIL_CATEGORY } from "../entities/cocktail.entity.js";
-import { COCKTAIL_CATEGORY_UNIQUE_NAME, CocktailCategory } from "../entities/cocktailCategory.entity.js";
-import { isConstraintError, PgErrorCode } from "../shared/utils/dbErrors.js";
+import { ConflictException, Injectable } from '@nestjs/common';
+import { EntityManager } from 'typeorm';
+import { FK_COCKTAIL_CATEGORY } from '../entities/cocktail.entity.js';
+import {
+  COCKTAIL_CATEGORY_UNIQUE_NAME,
+  CocktailCategory,
+} from '../entities/cocktailCategory.entity.js';
+import { isConstraintError, PgErrorCode } from '../shared/utils/dbErrors.js';
 
-export type CocktailCategoryInput = Partial<Omit<CocktailCategory, 'id' | 'cocktails'>>;
+export type CocktailCategoryInput = Partial<
+  Omit<CocktailCategory, 'id' | 'cocktails'>
+>;
 
 @Injectable()
 export class CategoriesService {
