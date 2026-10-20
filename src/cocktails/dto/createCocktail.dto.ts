@@ -11,24 +11,15 @@ export const createCocktailSchema = z.strictObject({
       z.object({
         id: z.uuid(),
         unit: z.enum(IngredientUnit),
-        amount: z.number().positive().max(999).multipleOf(0.01)
+        amount: z.number().positive().max(999).multipleOf(0.01),
       }),
     )
     .max(MAX_COCKTAIL_INGREDIENTS)
-    .superRefine((ingredients, ctx) => {
-      const seen = new Set<string>();
-      for (const [i, item] of ingredients.entries()) {
-        if (seen.has(item.id)) {
-          ctx.addIssue({
-            code: 'invalid_value',
-            message: 'Duplicate ingredient id.',
-            path: [i],
-            values: [item.id],
-          });
-          continue;
-        }
-        seen.add(item.id);
-      }
+    .refine((ingredients) => {
+      return (
+        ingredients.length === new Set(ingredients.map((i) => i.id)).size,
+        'Duplicate ingredient id.'
+      );
     }),
 });
 
