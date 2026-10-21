@@ -1,4 +1,5 @@
 import { ConflictException, Injectable } from '@nestjs/common';
+import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { FK_COCKTAIL_CATEGORY } from '../entities/cocktail.entity.js';
 import {
@@ -13,7 +14,10 @@ export type CocktailCategoryInput = Partial<
 
 @Injectable()
 export class CategoriesService {
-  constructor(private readonly entityManager: EntityManager) {}
+  constructor(
+    @InjectEntityManager()
+    private readonly entityManager: EntityManager,
+  ) {}
 
   async findCategories(): Promise<CocktailCategory[]> {
     return await this.entityManager.find(CocktailCategory);
@@ -44,7 +48,7 @@ export class CategoriesService {
     try {
       const result = await this.entityManager.update(
         CocktailCategory,
-        { id },
+        id,
         input,
         { returning: '*' },
       );
@@ -65,8 +69,8 @@ export class CategoriesService {
 
   async deleteCategory(id: number): Promise<boolean> {
     try {
-      const result = await this.entityManager.delete(CocktailCategory, { id });
-      return result.affected === 0;
+      const result = await this.entityManager.delete(CocktailCategory, id);
+      return result.affected !== 0;
     } catch (e) {
       if (
         isConstraintError(
