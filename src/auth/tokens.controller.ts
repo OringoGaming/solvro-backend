@@ -1,3 +1,4 @@
+import { Public, TokenService } from '@nestjs/authentication';
 import {
   Body,
   Controller,
@@ -6,9 +7,8 @@ import {
   Post,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Public, TokenService } from '@nestjs/authentication';
-import { signInSchema, type SignInDto } from './dto/signIn.dto.js';
 import { UsersService } from '../users/users.service.js';
+import { signInSchema, type SignInDto } from './dto/signIn.dto.js';
 
 @Public()
 @Controller('auth/token')
@@ -19,6 +19,7 @@ export class TokensController {
   ) {}
 
   @Post()
+  @HttpCode(HttpStatus.OK)
   async issue(@Body({ schema: signInSchema }) body: SignInDto) {
     const user = await this.usersService.findForLogin(
       body.email,

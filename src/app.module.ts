@@ -19,6 +19,7 @@ import { IngredientImage } from './entities/ingredientImage.entity.js';
 import { User } from './entities/user.entity.js';
 import { IngredientsModule } from './ingredients/ingredients.module.js';
 import { SeedModule } from './seed/seed.module.js';
+import { isTest } from './shared/utils/utils.js';
 
 @Module({
   providers: [
@@ -32,31 +33,41 @@ import { SeedModule } from './seed/seed.module.js';
     },
   ],
   imports: [
-    ConfigModule.forRoot(),
-    AuthenticationModule.forRoot({
-      accessToken: {
-        key: process.env.JWT_SECRET!,
-        issuer: 'cocktails',
-        ttl: '15m',
+    ConfigModule.forRoot({
+      ignoreEnvFile: isTest()
+    }),
+    AuthenticationModule.forRootAsync({
+      useFactory() {
+        return {
+          accessToken: {
+            key: process.env.JWT_SECRET!,
+            issuer: 'cocktails',
+            ttl: '15m',
+          },
+        };
       },
     }),
     AuthorizationModule.forRoot(),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST,
-      port: parseInt(process.env.DB_PORT!),
-      username: process.env.DB_USERNAME,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_DATABASE,
-      entities: [
-        Cocktail,
-        CocktailIngredient,
-        Ingredient,
-        CocktailCategory,
-        User,
-        IngredientImage,
-      ],
-      synchronize: false,
+    TypeOrmModule.forRootAsync({
+      useFactory() {
+        return {
+          type: 'postgres',
+          host: process.env.DB_HOST,
+          port: parseInt(process.env.DB_PORT!),
+          username: process.env.DB_USERNAME,
+          password: process.env.DB_PASSWORD,
+          database: process.env.DB_DATABASE,
+          entities: [
+            Cocktail,
+            CocktailIngredient,
+            Ingredient,
+            CocktailCategory,
+            User,
+            IngredientImage,
+          ],
+          synchronize: false,
+        };
+      },
     }),
     AuthModule,
     CocktailsModule,
