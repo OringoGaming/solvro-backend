@@ -11,7 +11,6 @@ import {
   FK_COCKTAIL_USER,
   UQ_COCKTAIL_NAME,
 } from '../entities/cocktail.entity.js';
-import { CocktailCategory } from '../entities/cocktailCategory.entity.js';
 import {
   COCKTAIL_INGREDIENT_INGREDIENT_FK,
   CocktailIngredient,
@@ -22,6 +21,7 @@ import {
   PgErrorCode,
 } from '../shared/utils/dbErrors.js';
 import { CocktailsPolicy } from './cocktails.policy.js';
+import { InjectEntityManager } from '@nestjs/typeorm';
 
 const cocktailRelations = {
   category: true,
@@ -92,6 +92,7 @@ export interface CocktailsFilter {
 @Injectable()
 export class CocktailsService {
   constructor(
+    @InjectEntityManager()
     private readonly entityManager: EntityManager,
     private readonly authService: AuthorizationService,
   ) {}
