@@ -84,7 +84,7 @@ export class CategoriesController {
     description: 'If the logged in user is not an admin.',
   })
   async updateCategory(
-    @Param({ schema: z.number() }) id: number,
+    @Param({ schema: z.object({ id: z.coerce.number() }) }) id: number,
     @Body({ schema: createCocktailCategorySchema })
     body: CreateCocktailCategoryDto,
   ): Promise<CocktailCategoryResposeDto> {
@@ -106,7 +106,9 @@ export class CategoriesController {
   @ApiForbiddenResponse({
     description: 'If the logged in user is not an admin.',
   })
-  async deleteCategory(@Param({ schema: z.number() }) id: number) {
+  async deleteCategory(
+    @Param({ schema: z.object({ id: z.coerce.number() }) }) id: number,
+  ) {
     const result = await this.categoryService.deleteCategory(id);
     if (!result) throw new NotFoundException('Cocktail not found.');
   }
