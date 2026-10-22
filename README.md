@@ -32,7 +32,6 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
-Swagger jest dostępny pod adresem `http://localhost:3000/api`
 
 ## Run tests
 
@@ -47,8 +46,9 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
-## Schemat bazy:
+## Database schema:
 ![Alt text](schema.png "DB Schema")
 
 ## Swagger
+Swagger is avalible at `http://localhost:3000/api`
 ![Alt text](swagger.png "Swagger")
