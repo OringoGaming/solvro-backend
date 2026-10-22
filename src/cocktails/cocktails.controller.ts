@@ -102,7 +102,7 @@ export class CocktailsController {
   @SerializeOptions({ schema: cocktailsPageSchema })
   @ApiOperation({
     summary:
-      'Returns a page of cocktails and the amount of pages filtered and sorted by the specified options.',
+      'Returns a page of cocktails.',
   })
   @ApiOkResponse({ summary: 'The page', standardSchema: cocktailsPageSchema })
   async page(

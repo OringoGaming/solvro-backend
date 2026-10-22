@@ -46,3 +46,9 @@ $ npm run test:e2e
 # test coverage
 $ npm run test:cov
 ```
+
+## Schemat bazy:
+![Alt text](schema.png "DB Schema")
+
+## Swagger
+![Alt text](swagger.png "Swagger")
