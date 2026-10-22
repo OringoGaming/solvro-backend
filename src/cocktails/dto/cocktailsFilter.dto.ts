@@ -19,7 +19,10 @@ export const cocktailsFilterSchema = z
     userId: z.uuid().optional(),
     categoryIds: z
       //1 query param evals to string
-      .preprocess((v) => (typeof v === 'string' ? [v] : v), z.array(z.number()))
+      .preprocess(
+        (v) => (typeof v === 'string' ? [v] : v),
+        z.array(z.coerce.number()),
+      )
       .refine(
         (sort) => new Set(sort).size === sort.length,
         'Duplicate category id.',

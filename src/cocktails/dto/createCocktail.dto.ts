@@ -16,11 +16,8 @@ export const createCocktailSchema = z.strictObject({
     )
     .max(MAX_COCKTAIL_INGREDIENTS)
     .refine((ingredients) => {
-      return (
-        ingredients.length === new Set(ingredients.map((i) => i.id)).size,
-        'Duplicate ingredient id.'
-      );
-    }),
+      return ingredients.length === new Set(ingredients.map((i) => i.id)).size;
+    }, 'Duplicate ingredient id.'),
 });
 
 export type CreateCocktailDto = z.infer<typeof createCocktailSchema>;
