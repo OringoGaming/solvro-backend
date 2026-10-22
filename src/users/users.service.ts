@@ -23,13 +23,13 @@ export class UsersService {
       return await this.entityManager.save(User, u);
     } catch (e) {
       if (isConstraintError(e, PgErrorCode.UNIQUE_VIOLATION, UQ_USER_EMAIL))
-        throw new ConflictException("User email is taken.");
+        throw new ConflictException('User email is taken.');
       throw e;
     }
   }
 
   async hasUsers(): Promise<boolean> {
-    return await this.entityManager.count(User) !== 0;
+    return await this.entityManager.exists(User);
   }
 
   async findForLogin(email: string, password: string): Promise<User | null> {
