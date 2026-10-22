@@ -8,7 +8,7 @@ import {
   MOCK_USED_INGREDIENT,
   setupApp,
   signInAdmin,
-  signInUser,
+  signInUser1,
 } from './appUtils.js';
 
 describe('Ingredients', async () => {
@@ -108,11 +108,19 @@ describe('Ingredients', async () => {
 
     it('Creates', async () => {
       const token = await signInAdmin(app);
-      await request(app.getHttpServer())
+      const res = await request(app.getHttpServer())
         .post(`/ingredients`)
         .auth(token, { type: 'bearer' })
         .send(validBody)
         .expect(201);
+
+      await request(app.getHttpServer())
+        .get(`/ingredients/${res.body.id}`)
+        .expect(200)
+        .expect({
+          id: res.body.id,
+          ...validBody,
+        });
     });
 
     it('Requires admin.', async () => {
@@ -121,7 +129,7 @@ describe('Ingredients', async () => {
         .send(validBody)
         .expect(401);
 
-      const token = await signInUser(app);
+      const token = await signInUser1(app);
       await request(app.getHttpServer())
         .post(`/ingredients`)
         .auth(token, { type: 'bearer' })
@@ -188,7 +196,7 @@ describe('Ingredients', async () => {
         .send({})
         .expect(401);
 
-      const token = await signInUser(app);
+      const token = await signInUser1(app);
       await request(app.getHttpServer())
         .patch(`/ingredients/${MOCK_INGREDIENTS[0].id}`)
         .auth(token, { type: 'bearer' })
@@ -262,7 +270,7 @@ describe('Ingredients', async () => {
         .delete(`/ingredients/${MOCK_INGREDIENTS[0].id}`)
         .expect(401);
 
-      const token = await signInUser(app);
+      const token = await signInUser1(app);
       await request(app.getHttpServer())
         .delete(`/ingredients/${MOCK_INGREDIENTS[0].id}`)
         .auth(token, { type: 'bearer' })
@@ -283,6 +291,10 @@ describe('Ingredients', async () => {
         .delete(`/ingredients/${MOCK_INGREDIENTS[0].id}`)
         .auth(token, { type: 'bearer' })
         .expect(204);
+
+      await request(app.getHttpServer())
+        .get(`/ingredients/${MOCK_INGREDIENTS[0].id}`)
+        .expect(404);
     });
   });
 });
