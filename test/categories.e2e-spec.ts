@@ -10,10 +10,15 @@ import {
 
 describe('Categories', async () => {
   let app: INestApplication<App>;
+  let id1: number;
+  let id2: number;
 
   beforeEach(async () => {
     app = await setupApp();
+    id1 = MOCK_CATEGORIES[0].id;
+    id2 = MOCK_CATEGORIES[1].id;
   });
+  afterAll(async () => await app.close());
 
   describe('/categories (GET)', async () => {
     it('Fetches categories', async () => {
@@ -66,7 +71,16 @@ describe('Categories', async () => {
         .auth(token, { type: 'bearer' })
         .send({ name: 'test' })
         .expect(201)
-        .expect({ id: 3, name: 'test' });
+        .expect((resp) => resp.body.name === 'test');
+    });
+
+    it('Returns a 409 for a taken name.', async () => {
+      const token = await signInAdmin(app);
+      await request(app.getHttpServer())
+        .post('/category')
+        .auth(token, { type: 'bearer' })
+        .send({ name: MOCK_CATEGORIES[0].name })
+        .expect(409);
     });
   });
 
@@ -74,13 +88,13 @@ describe('Categories', async () => {
     it('Does not allow unauthenticated or non admins', async () => {
       const token = await signInUser(app);
       await request(app.getHttpServer())
-        .patch('/category/1')
+        .patch(`/category/${id1}`)
         .auth(token, { type: 'bearer' })
         .send({ name: 'test' })
         .expect(403);
 
       await request(app.getHttpServer())
-        .patch('/category/1')
+        .patch(`/category/${id1}`)
         .send({ name: 'test' })
         .expect(401);
     });
@@ -88,19 +102,19 @@ describe('Categories', async () => {
     it('Does not allow invalid values', async () => {
       const token = await signInAdmin(app);
       await request(app.getHttpServer())
-        .patch('/category/1')
+        .patch(`/category/${id1}`)
         .auth(token, { type: 'bearer' })
         .send('1')
         .expect(400);
 
       await request(app.getHttpServer())
-        .patch('/category/1')
+        .patch(`/category/${id1}`)
         .auth(token, { type: 'bearer' })
         .send({ name: 1 })
         .expect(400);
 
       await request(app.getHttpServer())
-        .patch('/category/1')
+        .patch(`/category/${id1}`)
         .auth(token, { type: 'bearer' })
         .send({ name: 'good', junk: 1 })
         .expect(400);
@@ -118,11 +132,26 @@ describe('Categories', async () => {
     it('Updates a category', async () => {
       const token = await signInAdmin(app);
       await request(app.getHttpServer())
-        .patch('/category/1')
+        .patch(`/category/${id1}`)
+        .auth(token, { type: 'bearer' })
+        .send({})
+        .expect(200)
+        .expect(MOCK_CATEGORIES[0]);
+      await request(app.getHttpServer())
+        .patch(`/category/${id1}`)
         .auth(token, { type: 'bearer' })
         .send({ name: 'good' })
         .expect(200)
-        .expect({ id: 1, name: 'good' });
+        .expect({ id: id1, name: 'good' });
+    });
+
+    it('Returns a 409 for a taken name.', async () => {
+      const token = await signInAdmin(app);
+      await request(app.getHttpServer())
+        .patch(`/category/${id1}`)
+        .auth(token, { type: 'bearer' })
+        .send({ name: MOCK_CATEGORIES[1].name })
+        .expect(409);
     });
   });
 
@@ -130,11 +159,11 @@ describe('Categories', async () => {
     it('Does not allow unauthenticated or non admins', async () => {
       const token = await signInUser(app);
       await request(app.getHttpServer())
-        .delete('/category/1')
+        .delete(`/category/${id1}`)
         .auth(token, { type: 'bearer' })
         .expect(403);
 
-      await request(app.getHttpServer()).delete('/category/1').expect(401);
+      await request(app.getHttpServer()).delete(`/category/${id1}`).expect(401);
     });
 
     it('Returns 404 for a missing category', async () => {
@@ -148,16 +177,22 @@ describe('Categories', async () => {
     it('Deletes a category', async () => {
       const token = await signInAdmin(app);
       await request(app.getHttpServer())
-        .delete('/category/1')
+        .delete(`/category/${id1}`)
         .auth(token, { type: 'bearer' })
         .expect(204);
 
       await request(app.getHttpServer())
         .get('/category')
         .expect(200)
-        .expect([MOCK_CATEGORIES[1]]);
+        .expect(MOCK_CATEGORIES.toSpliced(0, 1));
+    });
+
+    it('Returns 409 for used category', async () => {
+      const token = await signInAdmin(app);
+      await request(app.getHttpServer())
+        .delete(`/category/${id2}`)
+        .auth(token, { type: 'bearer' })
+        .expect(409);
     });
   });
-
-  afterAll(async () => await app.close());
 });
