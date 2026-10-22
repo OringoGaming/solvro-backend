@@ -31,6 +31,7 @@ import {
   createCocktailCategorySchema,
   type CreateCocktailCategoryDto,
 } from './dto/createCocktailCategory.dto.js';
+import { updateCocktailCategorySchema } from './dto/updateCocktailCategory.dto.js';
 
 @Controller('category')
 export class CategoriesController {
@@ -84,8 +85,8 @@ export class CategoriesController {
     description: 'If the logged in user is not an admin.',
   })
   async updateCategory(
-    @Param({ schema: z.object({ id: z.coerce.number() }) }) id: number,
-    @Body({ schema: createCocktailCategorySchema })
+    @Param('id', { schema: z.coerce.number().int() }) id: number,
+    @Body({ schema: updateCocktailCategorySchema })
     body: CreateCocktailCategoryDto,
   ): Promise<CocktailCategoryResposeDto> {
     const result = await this.categoryService.updateCategory(id, body);
@@ -107,7 +108,7 @@ export class CategoriesController {
     description: 'If the logged in user is not an admin.',
   })
   async deleteCategory(
-    @Param({ schema: z.object({ id: z.coerce.number() }) }) id: number,
+    @Param('id', { schema: z.coerce.number().int() }) id: number,
   ) {
     const result = await this.categoryService.deleteCategory(id);
     if (!result) throw new NotFoundException('Cocktail not found.');

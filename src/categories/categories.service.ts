@@ -45,6 +45,8 @@ export class CategoriesService {
     id: number,
     input: CocktailCategoryInput,
   ): Promise<CocktailCategory | null> {
+    if (Object.keys(input).length === 0)
+      return await this.entityManager.findOneBy(CocktailCategory, { id });
     try {
       const result = await this.entityManager.update(
         CocktailCategory,
@@ -69,7 +71,7 @@ export class CategoriesService {
 
   async deleteCategory(id: number): Promise<boolean> {
     try {
-      const result = await this.entityManager.delete(CocktailCategory, id);
+      const result = await this.entityManager.delete(CocktailCategory, { id });
       return result.affected !== 0;
     } catch (e) {
       if (

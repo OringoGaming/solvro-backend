@@ -4,6 +4,7 @@ import {
   Injectable,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import { InjectEntityManager } from '@nestjs/typeorm';
 import { DeepPartial, EntityManager } from 'typeorm';
 import {
   Cocktail,
@@ -21,7 +22,6 @@ import {
   PgErrorCode,
 } from '../shared/utils/dbErrors.js';
 import { CocktailsPolicy } from './cocktails.policy.js';
-import { InjectEntityManager } from '@nestjs/typeorm';
 
 const cocktailRelations = {
   category: true,
@@ -236,6 +236,12 @@ export class CocktailsService {
       });
       if (inDb === null) return null;
       await this.authService.authorize(CocktailsPolicy, 'edit', user, inDb);
+
+      if (Object.keys(input).length === 0)
+        return mgr.findOne(Cocktail, {
+          where: { id },
+          relations: cocktailRelations,
+        });
 
       try {
         await mgr.save(Cocktail, { id, ...input });
