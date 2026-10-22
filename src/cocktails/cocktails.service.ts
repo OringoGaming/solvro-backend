@@ -52,11 +52,9 @@ function rethrowCocktailSaveError(e: unknown): unknown {
   if (code === PgErrorCode.FOREIGN_KEY_VIOLATION) {
     switch (constraint) {
       case FK_COCKTAIL_CATEGORY:
-        return new UnprocessableEntityException(
-          'Cocktail category does not exist.',
-        );
+        return new ConflictException('Cocktail category does not exist.');
       case FK_COCKTAIL_USER:
-        return new UnprocessableEntityException('User does not exist.');
+        return new ConflictException('User does not exist.');
       case COCKTAIL_INGREDIENT_INGREDIENT_FK:
         return new ConflictException('Cocktail ingredient does not exist.');
     }

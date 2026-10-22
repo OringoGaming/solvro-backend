@@ -5,7 +5,7 @@ import {
   MOCK_CATEGORIES,
   setupApp,
   signInAdmin,
-  signInUser,
+  signInUser1,
 } from './appUtils.js';
 
 describe('Categories', async () => {
@@ -31,7 +31,7 @@ describe('Categories', async () => {
 
   describe('/categories (POST)', async () => {
     it('Does not allow unauthenticated or non admins', async () => {
-      const token = await signInUser(app);
+      const token = await signInUser1(app);
       await request(app.getHttpServer())
         .post('/category')
         .auth(token, { type: 'bearer' })
@@ -86,7 +86,7 @@ describe('Categories', async () => {
 
   describe('/categories/:id (PATCH)', async () => {
     it('Does not allow unauthenticated or non admins', async () => {
-      const token = await signInUser(app);
+      const token = await signInUser1(app);
       await request(app.getHttpServer())
         .patch(`/category/${id1}`)
         .auth(token, { type: 'bearer' })
@@ -157,7 +157,7 @@ describe('Categories', async () => {
 
   describe('/categories/:id (DELETE)', async () => {
     it('Does not allow unauthenticated or non admins', async () => {
-      const token = await signInUser(app);
+      const token = await signInUser1(app);
       await request(app.getHttpServer())
         .delete(`/category/${id1}`)
         .auth(token, { type: 'bearer' })
