@@ -4,23 +4,28 @@ import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { DataSource, EntityManager } from 'typeorm';
 import { AppModule } from '../src/app.module.js';
-import { CocktailCategoryResposeDto } from '../src/categories/dto/cocktailCategoryResponse.dto.js';
+import { CocktailCategoryResposeDto as CocktailCategoryResponseDto } from '../src/categories/dto/cocktailCategoryResponse.dto.js';
 import { CocktailResponseDto } from '../src/cocktails/dto/cocktailResponse.dto.js';
 import { Cocktail } from '../src/entities/cocktail.entity.js';
 import { CocktailCategory } from '../src/entities/cocktailCategory.entity.js';
 import { IngredientUnit } from '../src/entities/cocktailIngredient.entity.js';
 import { Ingredient } from '../src/entities/ingredient.entity.js';
-import { UserRole } from '../src/entities/user.entity.js';
+import { User, UserRole } from '../src/entities/user.entity.js';
 import { IngredientResponseDto } from '../src/ingredients/dto/ingredientResponse.dto.js';
 import { UsersService } from '../src/users/users.service.js';
 
-export let MOCK_CATEGORIES: CocktailCategoryResposeDto[];
-export let MOCK_UNUSED_CATEGORY: CocktailCategoryResposeDto;
-export let MOCK_USED_CATEGORY: CocktailCategoryResposeDto;
+export let MOCK_CATEGORIES: CocktailCategoryResponseDto[];
+export let MOCK_UNUSED_CATEGORY: CocktailCategoryResponseDto;
+export let MOCK_USED_CATEGORY: CocktailCategoryResponseDto;
 export let MOCK_INGREDIENTS: IngredientResponseDto[];
 export let MOCK_UNUSED_INGREDIENT: IngredientResponseDto;
 export let MOCK_USED_INGREDIENT: IngredientResponseDto;
 export let MOCK_COCKTAILS: CocktailResponseDto[];
+export let USER1_COCKTAIL: CocktailResponseDto;
+export let USER2_COCKTAIL: CocktailResponseDto;
+export let USER1: User;
+export let USER2: User;
+export let ADMIN: User;
 
 async function signIn(
   app: INestApplication<App>,
@@ -38,8 +43,8 @@ export async function signInAdmin(app: INestApplication<App>): Promise<string> {
   return signIn(app, 'admin@example.com', 'test');
 }
 
-export async function signInUser(app: INestApplication<App>): Promise<string> {
-  return signIn(app, 'user@example.com', 'test');
+export async function signInUser1(app: INestApplication<App>): Promise<string> {
+  return signIn(app, 'user1@example.com', 'test');
 }
 
 export async function setupApp(): Promise<INestApplication<App>> {
@@ -51,16 +56,16 @@ export async function setupApp(): Promise<INestApplication<App>> {
   await app.get(DataSource).synchronize();
 
   const userService = app.get(UsersService);
-  await userService.create(
+  ADMIN = await userService.create(
     { email: 'admin@example.com', role: UserRole.ADMIN },
     'test',
   );
-  const user = await userService.create(
-    { email: 'user@example.com', role: UserRole.USER },
+  USER1 = await userService.create(
+    { email: 'user1@example.com', role: UserRole.USER },
     'test',
   );
-  const user1 = await userService.create(
-    { email: 'user1@example.com', role: UserRole.USER },
+  USER2 = await userService.create(
+    { email: 'user2@example.com', role: UserRole.USER },
     'test',
   );
 
@@ -101,7 +106,7 @@ export async function setupApp(): Promise<INestApplication<App>> {
         name: 'Vodka Lime',
         instruction: 'Shake vodka with lime juice and ice.',
         categoryId: MOCK_USED_CATEGORY.id,
-        userId: user.id,
+        userId: USER1.id,
         cocktailIngredients: [
           {
             ingredientId: MOCK_USED_INGREDIENT.id,
@@ -119,7 +124,7 @@ export async function setupApp(): Promise<INestApplication<App>> {
         name: 'Lime Soda',
         instruction: 'Top lime juice with soda water.',
         categoryId: MOCK_USED_CATEGORY.id,
-        userId: user1.id,
+        userId: USER2.id,
         cocktailIngredients: [
           {
             ingredientId: MOCK_INGREDIENTS[2].id,
@@ -162,6 +167,9 @@ export async function setupApp(): Promise<INestApplication<App>> {
       user: { id: c.userId, email: c.user.email },
     };
   });
+
+  USER1_COCKTAIL = MOCK_COCKTAILS.find((c) => c.user.id === USER1.id)!;
+  USER2_COCKTAIL = MOCK_COCKTAILS.find((c) => c.user.id === USER2.id)!;
 
   return app;
 }
