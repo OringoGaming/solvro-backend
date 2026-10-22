@@ -13,9 +13,8 @@ export class CocktailsPolicy {
   }
 
   async edit(user: User | null, cocktail: Cocktail) {
-    //policy runs before validation.
     if (user === null) return false;
-    if (user.role !== UserRole.ADMIN) return true;
+    if (user.role === UserRole.ADMIN) return true;
 
     return user.id === cocktail.userId;
   }
