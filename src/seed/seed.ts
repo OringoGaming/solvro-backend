@@ -9,10 +9,8 @@ export class Seed implements OnModuleInit {
   constructor(private readonly usersService: UsersService) {}
 
   async onModuleInit() {
-    if (isTest() || await this.usersService.hasUsers())
-      return;
+    if (isTest() || (await this.usersService.hasUsers())) return;
     try {
-      
       await this.usersService.create(
         { email: 'user@example.com', role: UserRole.USER },
         'test',
@@ -22,7 +20,7 @@ export class Seed implements OnModuleInit {
         'test',
       );
     } catch (e) {
-      this.logger.error("Failed to seed users.", e);
+      this.logger.error('Failed to seed users.', e);
     }
   }
 }

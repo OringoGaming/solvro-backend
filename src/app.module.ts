@@ -34,7 +34,7 @@ import { isTest } from './shared/utils/utils.js';
   ],
   imports: [
     ConfigModule.forRoot({
-      ignoreEnvFile: isTest()
+      ignoreEnvFile: isTest(),
     }),
     AuthenticationModule.forRootAsync({
       useFactory() {

@@ -1,4 +1,10 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import {
+  Column,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  Unique,
+} from 'typeorm';
 import type { Cocktail } from './cocktail.entity.js';
 
 export enum UserRole {
@@ -6,7 +12,7 @@ export enum UserRole {
   ADMIN = 'admin',
 }
 
-export const UQ_USER_EMAIL = "UQ_USER_EMAIL";
+export const UQ_USER_EMAIL = 'UQ_USER_EMAIL';
 
 @Entity()
 @Unique(UQ_USER_EMAIL, ['email'])

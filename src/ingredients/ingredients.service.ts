@@ -142,6 +142,7 @@ export class IngredientsService {
     id: string,
     ingredient: IngredientInput,
   ): Promise<Ingredient | null> {
+    if (Object.keys(ingredient).length === 0) return this.find(id);
     try {
       const res = await this.entityManager.update(
         Ingredient,
